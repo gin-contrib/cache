@@ -1,29 +1,55 @@
-# gin-gonic/contrib [![Build Status](https://travis-ci.org/gin-gonic/contrib.svg)](https://travis-ci.org/gin-gonic/contrib)
+# Cache gin's middleware
 
-=======  
+[![Build Status](https://travis-ci.org/dpordomingo/go-gingonic-cache.svg)](https://travis-ci.org/dpordomingo/go-gingonic-cache)
+[![codecov](https://codecov.io/gh/dpordomingo/go-gingonic-cache/branch/master/graph/badge.svg)](https://codecov.io/gh/dpordomingo/go-gingonic-cache)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dpordomingo/go-gingonic-cache)](https://goreportcard.com/report/github.com/dpordomingo/go-gingonic-cache)
+[![GoDoc](https://godoc.org/github.com/dpordomingo/go-gingonic-cache?status.svg)](https://godoc.org/github.com/dpordomingo/go-gingonic-cache)
 
-Here you'll find middleware ready to  use with [Gin Framework](https://github.com/gin-gonic/gin). Submit your pull request, either with the package in a folder, or by adding a link to this `README.md`.
 
-If adding a package directly, don't forget to create a `README.md` inside with author name.
-If adding a link to your own repository, please follow this example:
+Gin middleware/handler to enable Cache.
 
+## Usage
+
+### Start using it
+
+Download and install it:
+
+```sh
+$ go get github.com/dpordomingo/go-gingonic-cache
 ```
-+ nameOfMiddleware (https://github.com/yourusername/yourrepo)
+
+Import it in your code:
+
+```go
+import "github.com/dpordomingo/go-gingonic-cache"
 ```
 
-Each author is responsible of maintaining his own code, although if you submit as a package, you allow the community to fix it. You can also submit a pull request to fix an existing package.
+### Canonical example:
 
-======  
-## List of external middleware
+```go
+package main
 
-+ [staticbin](https://github.com/olebedev/staticbin) - middleware/handler for serving static files from binary data
-+ [gin-csrf](https://github.com/utrack/gin-csrf) - CSRF protection
-+ [gin-health](https://github.com/utrack/gin-health) - middleware that simplifies stat reporting via [gocraft/health](https://github.com/gocraft/health)
-+ [gin-merry](https://github.com/utrack/gin-merry) - middleware for pretty-printing [merry](https://github.com/ansel1/merry) errors with context
-+ [gin-revision](https://github.com/appleboy/gin-revision-middleware) - Revision middleware for Gin framework
-+ [gin-jwt](https://github.com/appleboy/gin-jwt) - JWT Middleware for Gin Framework
-+ [gin-sessions](https://github.com/kimiazhu/ginweb-contrib/tree/master/sessions) - session middleware based on mongodb and mysql
-+ [gin-location](https://github.com/drone/gin-location) - middleware for exposing the server's hostname and scheme
-+ [gin-nice-recovery](https://github.com/ekyoung/gin-nice-recovery) - panic recovery middleware that let's you build a nicer user experience
-+ [gin-limit](https://github.com/aviddiviner/gin-limit) - limits simultaneous requests; can help with high traffic load
-+ [ez-gin-template](https://github.com/michelloworld/ez-gin-template) - easy template wrap for gin
+import (
+	"time"
+
+	"github.com/dpordomingo/go-gingonic-cache"
+	"gopkg.in/gin-gonic/gin.v1"
+)
+
+func main() {
+	router := gin.Default()
+
+	store := cache.NewInMemoryStore(time.Second)
+	// Cached Page
+	router.GET("/ping", func(c *gin.Context) {
+		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
+	})
+
+	router.GET("/cache_ping", cache.CachePage(store, time.Minute, func(c *gin.Context) {
+		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
+	}))
+
+	// Listen and Server in 0.0.0.0:8080
+	router.Run(":8080")
+}
+```
