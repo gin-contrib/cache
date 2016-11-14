@@ -8,6 +8,9 @@ services:
   - memcache
   - redis-server
 
+before_install:
+  - go get -t -v ./...
+  
 script:
   - go test -v -covermode=atomic -coverprofile=coverage.out
 
