@@ -7,12 +7,13 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-// Wraps the Redis client to meet the Cache interface.
+// RedisStore represents the cache with redis persistence
 type RedisStore struct {
 	pool              *redis.Pool
 	defaultExpiration time.Duration
 }
 
+// NewRedisCache returns a RedisStore
 // until redigo supports sharding/clustering, only one host will be in hostList
 func NewRedisCache(host string, password string, defaultExpiration time.Duration) *RedisStore {
 	var pool = &redis.Pool{
@@ -49,10 +50,12 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 	return &RedisStore{pool, defaultExpiration}
 }
 
+// Set (see CacheStore interface)
 func (c *RedisStore) Set(key string, value interface{}, expires time.Duration) error {
 	return c.invoke(c.pool.Get().Do, key, value, expires)
 }
 
+// Add (see CacheStore interface)
 func (c *RedisStore) Add(key string, value interface{}, expires time.Duration) error {
 	conn := c.pool.Get()
 	if exists(conn, key) {
@@ -61,6 +64,7 @@ func (c *RedisStore) Add(key string, value interface{}, expires time.Duration) e
 	return c.invoke(conn.Do, key, value, expires)
 }
 
+// Replace (see CacheStore interface)
 func (c *RedisStore) Replace(key string, value interface{}, expires time.Duration) error {
 	conn := c.pool.Get()
 	if !exists(conn, key) {
@@ -69,11 +73,13 @@ func (c *RedisStore) Replace(key string, value interface{}, expires time.Duratio
 	err := c.invoke(conn.Do, key, value, expires)
 	if value == nil {
 		return ErrNotStored
-	} else {
-		return err
 	}
+
+	return err
+
 }
 
+// Get (see CacheStore interface)
 func (c *RedisStore) Get(key string, ptrValue interface{}) error {
 	conn := c.pool.Get()
 	defer conn.Close()
@@ -93,6 +99,7 @@ func exists(conn redis.Conn, key string) bool {
 	return retval
 }
 
+// Delete (see CacheStore interface)
 func (c *RedisStore) Delete(key string) error {
 	conn := c.pool.Get()
 	defer conn.Close()
@@ -103,6 +110,7 @@ func (c *RedisStore) Delete(key string) error {
 	return err
 }
 
+// Increment (see CacheStore interface)
 func (c *RedisStore) Increment(key string, delta uint64) (uint64, error) {
 	conn := c.pool.Get()
 	defer conn.Close()
@@ -119,17 +127,18 @@ func (c *RedisStore) Increment(key string, delta uint64) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
-		var sum int64 = currentVal + int64(delta)
+		sum := currentVal + int64(delta)
 		_, err = conn.Do("SET", key, sum)
 		if err != nil {
 			return 0, err
 		}
 		return uint64(sum), nil
-	} else {
-		return 0, err
 	}
+
+	return 0, err
 }
 
+// Decrement (see CacheStore interface)
 func (c *RedisStore) Decrement(key string, delta uint64) (newValue uint64, err error) {
 	conn := c.pool.Get()
 	defer conn.Close()
@@ -150,6 +159,7 @@ func (c *RedisStore) Decrement(key string, delta uint64) (newValue uint64, err e
 	return uint64(tempint), err
 }
 
+// Flush (see CacheStore interface)
 func (c *RedisStore) Flush() error {
 	conn := c.pool.Get()
 	defer conn.Close()
@@ -176,8 +186,9 @@ func (c *RedisStore) invoke(f func(string, ...interface{}) (interface{}, error),
 	if expires > 0 {
 		_, err := f("SETEX", key, int32(expires/time.Second), b)
 		return err
-	} else {
-		_, err := f("SET", key, b)
-		return err
 	}
+
+	_, err = f("SET", key, b)
+	return err
+
 }
