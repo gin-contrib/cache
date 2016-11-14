@@ -1,4 +1,4 @@
-package cache
+package utils
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func serialize(value interface{}) ([]byte, error) {
+func Serialize(value interface{}) ([]byte, error) {
 	if bytes, ok := value.([]byte); ok {
 		return bytes, nil
 	}
@@ -27,7 +27,7 @@ func serialize(value interface{}) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func deserialize(byt []byte, ptr interface{}) (err error) {
+func Deserialize(byt []byte, ptr interface{}) (err error) {
 	if bytes, ok := ptr.(*[]byte); ok {
 		*bytes = byt
 		return nil

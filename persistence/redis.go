@@ -1,8 +1,10 @@
-package cache
+package persistence
 
 import (
-	"github.com/garyburd/redigo/redis"
 	"time"
+
+	"github.com/dpordomingo/go-gingonic-cache/utils"
+	"github.com/garyburd/redigo/redis"
 )
 
 // Wraps the Redis client to meet the Cache interface.
@@ -83,7 +85,7 @@ func (c *RedisStore) Get(key string, ptrValue interface{}) error {
 	if err != nil {
 		return err
 	}
-	return deserialize(item, ptrValue)
+	return utils.Deserialize(item, ptrValue)
 }
 
 func exists(conn redis.Conn, key string) bool {
@@ -165,7 +167,7 @@ func (c *RedisStore) invoke(f func(string, ...interface{}) (interface{}, error),
 		expires = time.Duration(0)
 	}
 
-	b, err := serialize(value)
+	b, err := utils.Serialize(value)
 	if err != nil {
 		return err
 	}

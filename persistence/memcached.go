@@ -1,8 +1,10 @@
-package cache
+package persistence
 
 import (
-	"github.com/bradfitz/gomemcache/memcache"
 	"time"
+
+	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/dpordomingo/go-gingonic-cache/utils"
 )
 
 type MemcachedStore struct {
@@ -31,7 +33,7 @@ func (c *MemcachedStore) Get(key string, value interface{}) error {
 	if err != nil {
 		return convertMemcacheError(err)
 	}
-	return deserialize(item.Value, value)
+	return utils.Deserialize(item.Value, value)
 }
 
 func (c *MemcachedStore) Delete(key string) error {
@@ -62,7 +64,7 @@ func (c *MemcachedStore) invoke(storeFn func(*memcache.Client, *memcache.Item) e
 		expire = time.Duration(0)
 	}
 
-	b, err := serialize(value)
+	b, err := utils.Serialize(value)
 	if err != nil {
 		return err
 	}
