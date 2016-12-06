@@ -1,10 +1,9 @@
 # Cache gin's middleware
 
-[![Build Status](https://travis-ci.org/dpordomingo/go-gingonic-cache.svg)](https://travis-ci.org/dpordomingo/go-gingonic-cache)
-[![codecov](https://codecov.io/gh/dpordomingo/go-gingonic-cache/branch/master/graph/badge.svg)](https://codecov.io/gh/dpordomingo/go-gingonic-cache)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dpordomingo/go-gingonic-cache)](https://goreportcard.com/report/github.com/dpordomingo/go-gingonic-cache)
-[![GoDoc](https://godoc.org/github.com/dpordomingo/go-gingonic-cache?status.svg)](https://godoc.org/github.com/dpordomingo/go-gingonic-cache)
-
+[![Build Status](https://travis-ci.org/gin-contrib/cache.svg)](https://travis-ci.org/gin-contrib/cache)
+[![codecov](https://codecov.io/gh/gin-contrib/cache/branch/master/graph/badge.svg)](https://codecov.io/gh/gin-contrib/cache)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gin-contrib/cache)](https://goreportcard.com/report/github.com/gin-contrib/cache)
+[![GoDoc](https://godoc.org/github.com/gin-contrib/cache?status.svg)](https://godoc.org/github.com/gin-contrib/cache)
 
 Gin middleware/handler to enable Cache.
 
@@ -15,13 +14,13 @@ Gin middleware/handler to enable Cache.
 Download and install it:
 
 ```sh
-$ go get github.com/dpordomingo/go-gingonic-cache
+$ go get github.com/gin-contrib/cache
 ```
 
 Import it in your code:
 
 ```go
-import "github.com/dpordomingo/go-gingonic-cache"
+import "github.com/gin-contrib/cache"
 ```
 
 ### Canonical example:
@@ -32,7 +31,7 @@ package main
 import (
 	"time"
 
-	"github.com/dpordomingo/go-gingonic-cache"
+	"github.com/gin-contrib/cache"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
