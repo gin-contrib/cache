@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/dpordomingo/go-gingonic-cache/utils"
+	"github.com/gin-contrib/cache/utils"
 )
 
 // MemcachedStore represents the cache with memcached persistence

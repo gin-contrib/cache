@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dpordomingo/go-gingonic-cache"
-	"github.com/dpordomingo/go-gingonic-cache/persistence"
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 

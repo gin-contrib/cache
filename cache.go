@@ -8,8 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/dpordomingo/go-gingonic-cache/persistence"
-
+	"github.com/gin-contrib/cache/persistence"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 

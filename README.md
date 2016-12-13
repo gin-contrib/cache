@@ -25,30 +25,34 @@ import "github.com/gin-contrib/cache"
 
 ### Canonical example:
 
+See the [example](example/example.go)
+
 ```go
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
 func main() {
-	router := gin.Default()
+	r := gin.Default()
 
-	store := cache.NewInMemoryStore(time.Second)
+	store := persistence.NewInMemoryStore(time.Second)
 	// Cached Page
-	router.GET("/ping", func(c *gin.Context) {
+	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
 	})
 
-	router.GET("/cache_ping", cache.CachePage(store, time.Minute, func(c *gin.Context) {
+	r.GET("/cache_ping", cache.CachePage(store, time.Minute, func(c *gin.Context) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
 	}))
 
 	// Listen and Server in 0.0.0.0:8080
-	router.Run(":8080")
+	r.Run(":8080")
 }
 ```
