@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/gin-contrib/cache/persistence"
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -120,12 +121,15 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 		var cache responseCache
 		url := c.Request.URL
 		key := urlEscape(PageCachePrefix, url.RequestURI())
+		log.Println(key)
 		if err := store.Get(key, &cache); err != nil {
+			log.Println(err.Error())
 			// replace writer
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
 			handle(c)
 		} else {
+			log.Println(cache.status)
 			c.Writer.WriteHeader(cache.status)
 			for k, vals := range cache.header {
 				for _, v := range vals {
