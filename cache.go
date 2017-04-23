@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-contrib/cache/persistence"
-	"github.com/gin-gonic/gin"
+	"gopkg.in/gin-gonic/gin.v1"
 )
 
 const (
