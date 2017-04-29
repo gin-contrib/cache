@@ -24,7 +24,7 @@ var (
 type responseCache struct {
 	status int
 	header http.Header
-	data   []byte
+	Data   []byte
 }
 
 type cachedWriter struct {
@@ -51,7 +51,7 @@ func urlEscape(prefix string, u string) string {
 }
 
 func newCachedWriter(store persistence.CacheStore, expire time.Duration, writer gin.ResponseWriter, key string) *cachedWriter {
-	return &cachedWriter{writer, 0, false, store, expire, key}
+	return &cachedWriter{writer, http.StatusOK, false, store, expire, key}
 }
 
 func (w *cachedWriter) WriteHeader(code int) {
@@ -109,7 +109,7 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 					c.Writer.Header().Add(k, v)
 				}
 			}
-			c.Writer.Write(cache.data)
+			c.Writer.Write(cache.Data)
 		}
 	}
 }
@@ -136,7 +136,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 					c.Writer.Header().Add(k, v)
 				}
 			}
-			c.Writer.Write(cache.data)
+			c.Writer.Write(cache.Data)
 		}
 	}
 }
