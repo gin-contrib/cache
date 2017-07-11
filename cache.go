@@ -36,6 +36,8 @@ type cachedWriter struct {
 	key     string
 }
 
+var _ gin.ResponseWriter = &cachedWriter{}
+
 func urlEscape(prefix string, u string) string {
 	key := url.QueryEscape(u)
 	if len(key) > 200 {
@@ -82,6 +84,21 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 		if err != nil {
 			// need logger
 		}
+	}
+	return ret, err
+}
+
+func (w *cachedWriter) WriteString(data string) (n int, err error) {
+	ret, err := w.ResponseWriter.WriteString(data)
+	if err == nil {
+		//cache response
+		store := w.store
+		val := responseCache{
+			w.status,
+			w.Header(),
+			[]byte(data),
+		}
+		store.Set(w.key, val, w.expire)
 	}
 	return ret, err
 }
