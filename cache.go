@@ -63,11 +63,11 @@ func (w *cachedWriter) WriteHeader(code int) {
 }
 
 func (w *cachedWriter) Status() int {
-	return w.status
+	return w.ResponseWriter.Status()
 }
 
 func (w *cachedWriter) Written() bool {
-	return w.written
+	return w.ResponseWriter.Written()
 }
 
 func (w *cachedWriter) Write(data []byte) (int, error) {
