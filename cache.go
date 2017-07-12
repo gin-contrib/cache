@@ -73,8 +73,14 @@ func (w *cachedWriter) Written() bool {
 func (w *cachedWriter) Write(data []byte) (int, error) {
 	ret, err := w.ResponseWriter.Write(data)
 	if err == nil {
-		//cache response
 		store := w.store
+
+		var cache responseCache
+		if err := store.Get(w.key, &cache); err == nil {
+			data = append(cache.data, data...)
+		}
+
+		//cache response
 		val := responseCache{
 			w.status,
 			w.Header(),

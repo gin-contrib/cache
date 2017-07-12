@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -11,12 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	gin.SetMode(gin.TestMode)
+}
 func TestCache(t *testing.T) {
 	//TODO:unit test
 }
 
 func TestWrite(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
@@ -33,7 +36,6 @@ func TestWrite(t *testing.T) {
 }
 
 func TestCachePage(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	store := persistence.NewInMemoryStore(60 * time.Second)
 
 	router := gin.New()
@@ -51,7 +53,7 @@ func TestCachePage(t *testing.T) {
 
 func TestCachePageExpire(t *testing.T) {
 	store := persistence.NewInMemoryStore(60 * time.Second)
-	gin.SetMode(gin.TestMode)
+
 	router := gin.New()
 	router.GET("/cache_ping", CachePage(store, time.Second, func(c *gin.Context) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
@@ -60,6 +62,41 @@ func TestCachePageExpire(t *testing.T) {
 	w1 := performRequest("GET", "/cache_ping", router)
 	time.Sleep(time.Second * 2)
 	w2 := performRequest("GET", "/cache_ping", router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
+}
+
+func TestCacheHtmlFile(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.LoadHTMLFiles("example/template.html")
+	router.GET("/cache_html", CachePage(store, time.Second*3, func(c *gin.Context) {
+		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().Unix())})
+	}))
+
+	w1 := performRequest("GET", "/cache_html", router)
+	w2 := performRequest("GET", "/cache_html", router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.Equal(t, w1.Body.String(), w2.Body.String())
+}
+
+func TestCacheHtmlFileExpire(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.LoadHTMLFiles("example/template.html")
+	router.GET("/cache_html", CachePage(store, time.Second*1, func(c *gin.Context) {
+		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().Unix())})
+	}))
+
+	w1 := performRequest("GET", "/cache_html", router)
+	time.Sleep(time.Second * 2)
+	w2 := performRequest("GET", "/cache_html", router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
