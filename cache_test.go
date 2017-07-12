@@ -15,6 +15,7 @@ import (
 func init() {
 	gin.SetMode(gin.TestMode)
 }
+
 func TestCache(t *testing.T) {
 	//TODO:unit test
 }
