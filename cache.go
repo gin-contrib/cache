@@ -138,7 +138,6 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 		var cache responseCache
 		url := c.Request.URL
 		key := urlEscape(PageCachePrefix, url.RequestURI())
-		log.Println(key)
 		if err := store.Get(key, &cache); err != nil {
 			log.Println(err.Error())
 			// replace writer
@@ -146,7 +145,6 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			c.Writer = writer
 			handle(c)
 		} else {
-			log.Println(cache.status)
 			c.Writer.WriteHeader(cache.status)
 			for k, vals := range cache.header {
 				for _, v := range vals {
