@@ -116,46 +116,68 @@ func Cache(store *persistence.CacheStore) gin.HandlerFunc {
 	}
 }
 
+func siteCache(store persistence.CacheStore, expire time.Duration, c *gin.Context) {
+	var cache responseCache
+	url := c.Request.URL
+	key := urlEscape(PageCachePrefix, url.RequestURI())
+	if err := store.Get(key, &cache); err != nil {
+		c.Next()
+	} else {
+		c.Writer.WriteHeader(cache.Status)
+		for k, vals := range cache.Header {
+			for _, v := range vals {
+				c.Writer.Header().Add(k, v)
+			}
+		}
+		c.Writer.Write(cache.Data)
+	}
+}
+
+func SiteCacheWithDurationFn(store persistence.CacheStore, expireFn func() time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		expire := expireFn()
+		siteCache(store, expire, c)
+	}
+}
+
 func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var cache responseCache
-		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
-		if err := store.Get(key, &cache); err != nil {
-			c.Next()
-		} else {
-			c.Writer.WriteHeader(cache.Status)
-			for k, vals := range cache.Header {
-				for _, v := range vals {
-					c.Writer.Header().Add(k, v)
-				}
+		siteCache(store, expire, c)
+	}
+}
+
+func cachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc, c *gin.Context) {
+	var cache responseCache
+	url := c.Request.URL
+	key := urlEscape(PageCachePrefix, url.RequestURI())
+	if err := store.Get(key, &cache); err != nil {
+		log.Println(err.Error())
+		// replace writer
+		writer := newCachedWriter(store, expire, c.Writer, key)
+		c.Writer = writer
+		handle(c)
+	} else {
+		c.Writer.WriteHeader(cache.Status)
+		for k, vals := range cache.Header {
+			for _, v := range vals {
+				c.Writer.Header().Add(k, v)
 			}
-			c.Writer.Write(cache.Data)
 		}
+		c.Writer.Write(cache.Data)
+	}
+}
+
+// CachePage Decorator with expire date as a function
+func CachePageWithDurationFn(store persistence.CacheStore, expireFn func() time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		expire := expireFn()
+		cachePage(store, expire, handle, c)
 	}
 }
 
 // CachePage Decorator
 func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
-		var cache responseCache
-		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
-		if err := store.Get(key, &cache); err != nil {
-			log.Println(err.Error())
-			// replace writer
-			writer := newCachedWriter(store, expire, c.Writer, key)
-			c.Writer = writer
-			handle(c)
-		} else {
-			c.Writer.WriteHeader(cache.Status)
-			for k, vals := range cache.Header {
-				for _, v := range vals {
-					c.Writer.Header().Add(k, v)
-				}
-			}
-			c.Writer.Write(cache.Data)
-		}
+		cachePage(store, expire, handle, c)
 	}
 }
