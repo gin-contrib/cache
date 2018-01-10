@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"github.com/lox/httpcache"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -119,8 +120,8 @@ func Cache(store *persistence.CacheStore) gin.HandlerFunc {
 func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+
+		key :=  httpcache.NewKey(c.Request.Method, c.Request.URL, c.Request.Header).String()
 		if err := store.Get(key, &cache); err != nil {
 			c.Next()
 		} else {
@@ -140,8 +141,8 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+		
+		key :=  httpcache.NewKey(c.Request.Method, c.Request.URL, c.Request.Header).String()
 		if err := store.Get(key, &cache); err != nil {
 			log.Println(err.Error())
 			// replace writer
