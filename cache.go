@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"time"
 	"github.com/lox/httpcache"
+	"net/http/httputil"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -158,5 +159,39 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			}
 			c.Writer.Write(cache.Data)
 		}
+	}
+}
+
+
+func CachePageIncludeBodyAsKey(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		var cache responseCache
+		
+		key, err :=  newKeyWithBody(c.Request)
+		if err = store.Get(key, &cache); err != nil {
+			log.Println(err.Error())
+			// replace writer
+			writer := newCachedWriter(store, expire, c.Writer, key)
+			c.Writer = writer
+			handle(c)
+		} else {
+			c.Writer.WriteHeader(cache.Status)
+			for k, vals := range cache.Header {
+				for _, v := range vals {
+					c.Writer.Header().Add(k, v)
+				}
+			}
+			c.Writer.Write(cache.Data)
+		}
+	}
+}
+
+func newKeyWithBody(r *http.Request) (string, error) {
+	dump, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		return "", err
+	} else {
+		return string(dump), nil
 	}
 }
