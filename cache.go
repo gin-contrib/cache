@@ -11,6 +11,9 @@ import (
 	"github.com/lox/httpcache"
 	"net/http/httputil"
 	"encoding/json"
+	"io/ioutil"
+	"fmt"
+	"errors"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -190,25 +193,60 @@ func CachePageIncludeBodyAsKey(store persistence.CacheStore, expire time.Duratio
 
 func newKeyWithBody(r *http.Request) (string, error) {
 
+	if r.Body == nil {
+		return "", errors.New("no body")
+	}
 
-	dump, err := httputil.DumpRequest(r, true)
+	dump, err := httputil.DumpRequest(r, false)
 	if err != nil {
 		return "", err
 	} else {
-		
-		// Note : json key order (including maps) is undefined. 
-		// but https://github.com/golang/go/issues/15424 says go sorts keys
-		// 
-	
-		// but we might get calls from non-go clients
-		// to get around this we marshall and unmarshall
-		var res interface{}
-		json.Unmarshal(dump, &res)
-		bs, _ := json.MarshalIndent(res, "", "  ")
-		return string(bs), nil
+		sortedBytes, err := sortBody(r)
+		if err == nil {
+			out := fmt.Sprintf("%v:%v", dump, sortedBytes)
+			//fmt.Printf("key = %s\n", out)
+			return out, nil
+		} else {
+			return "", err
+		}
 	}
 }
 
+
+func sortBody(r *http.Request) ([]byte, error) {
+	var buf bytes.Buffer
+  	if _, err := buf.ReadFrom(r.Body); err != nil {
+  		return nil, err
+  	}
+  		
+  	if err := r.Body.Close(); err != nil {
+  		return  nil, err
+  	}
+
+
+	// Note : json key order (including maps) is undefined. 
+	// but https://github.com/golang/go/issues/15424 says go sorts keys
+	// 
+	
+	// but we might get calls from non-go clients
+	// to get around this we marshall and unmarshall
+
+
+	var res interface{}
+	b := buf.Bytes()
+	err := json.Unmarshal(b, &res)
+	if err != nil {
+		// if it's not json, it will be caught here
+		return nil, err
+	}
+	bs, err := json.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Body = ioutil.NopCloser(bytes.NewReader(bs))
+	return bs, nil 
+}
 
 
 
