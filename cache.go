@@ -10,6 +10,7 @@ import (
 	"time"
 	"github.com/lox/httpcache"
 	"net/http/httputil"
+	"encoding/json"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -188,10 +189,26 @@ func CachePageIncludeBodyAsKey(store persistence.CacheStore, expire time.Duratio
 }
 
 func newKeyWithBody(r *http.Request) (string, error) {
+
+
 	dump, err := httputil.DumpRequest(r, true)
 	if err != nil {
 		return "", err
 	} else {
-		return string(dump), nil
+		
+		// Note : json key order (including maps) is undefined. 
+		// but https://github.com/golang/go/issues/15424 says go sorts keys
+		// 
+	
+		// but we might get calls from non-go clients
+		// to get around this we marshall and unmarshall
+		var res interface{}
+		json.Unmarshal(dump, &res)
+		bs, _ := json.MarshalIndent(res, "", "  ")
+		return string(bs), nil
 	}
 }
+
+
+
+
