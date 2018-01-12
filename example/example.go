@@ -22,6 +22,10 @@ func main() {
 		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
 	}))
 
+	r.PUT("/cache_post", cache.CachePageIncludeBodyAsKey(store, time.Minute, func(c *gin.Context) {
+		c.String(200, " POST pong "+fmt.Sprint(time.Now().Unix()))
+	}))
+
 
 	r.POST("/cache_post", cache.CachePageIncludeBodyAsKey(store, time.Minute, func(c *gin.Context) {
 		c.String(200, " POST pong "+fmt.Sprint(time.Now().Unix()))
