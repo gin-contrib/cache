@@ -31,6 +31,12 @@ func main() {
 		c.String(200, " POST pong "+fmt.Sprint(time.Now().Unix()))
 	}))
 
+
+	r.POST("/cache_error", cache.CachePageIncludeBodyAsKey(store, time.Minute, func(c *gin.Context) {
+		c.String(400, " Some Error  "+fmt.Sprint(time.Now().Unix()))
+	}))
+
+
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
 }

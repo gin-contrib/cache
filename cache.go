@@ -76,9 +76,13 @@ func (w *cachedWriter) Written() bool {
 	return w.ResponseWriter.Written()
 }
 
+func (w *cachedWriter) IsSuccess() bool {
+	return w.Status() == 200 || w.Status() == 202
+}
+
 func (w *cachedWriter) Write(data []byte) (int, error) {
 	ret, err := w.ResponseWriter.Write(data)
-	if err == nil {
+	if err == nil  &&  w.IsSuccess() {
 		store := w.store
 		var cache responseCache
 		if err := store.Get(w.key, &cache); err == nil {
@@ -101,7 +105,7 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 
 func (w *cachedWriter) WriteString(data string) (n int, err error) {
 	ret, err := w.ResponseWriter.WriteString(data)
-	if err == nil {
+	if err == nil && w.IsSuccess() {
 		//cache response
 		store := w.store
 		val := responseCache{
