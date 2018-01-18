@@ -52,7 +52,7 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 
 // NewRedisCacheWithPool returns a RedisStore using the provided pool
 // until redigo supports sharding/clustering, only one host will be in hostList
-func NewRedisCacheWithPool(*redis.Pool, defaultExpiration time.Duration) *RedisStore {
+func NewRedisCacheWithPool(pool *redis.Pool, defaultExpiration time.Duration) *RedisStore {
 	return &RedisStore{pool, defaultExpiration}
 }
 
