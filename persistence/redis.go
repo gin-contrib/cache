@@ -50,6 +50,12 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 	return &RedisStore{pool, defaultExpiration}
 }
 
+// NewRedisCacheWithPool returns a RedisStore using the provided pool
+// until redigo supports sharding/clustering, only one host will be in hostList
+func NewRedisCacheWithPool(*redis.Pool, defaultExpiration time.Duration) *RedisStore {
+	return &RedisStore{pool, defaultExpiration}
+}
+
 // Set (see CacheStore interface)
 func (c *RedisStore) Set(key string, value interface{}, expires time.Duration) error {
 	conn := c.pool.Get()
