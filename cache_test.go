@@ -161,5 +161,5 @@ func (c *atomicMemoryDelayStore) Set(key string, value interface{}, expires time
 
 func (c *atomicMemoryDelayStore) Add(key string, value interface{}, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
-	return c.Add(key, value, expires)
+	return c.InMemoryStore.Add(key, value, expires)
 }
