@@ -70,9 +70,9 @@ func TestCachePageExpire(t *testing.T) {
 }
 
 func TestCachePageAtomic(t *testing.T) {
-	// atomicMemoryDelayStore is a wrapper of a InMemoryStore
+	// memoryDelayStore is a wrapper of a InMemoryStore
 	// designed to simulate data race (by doing a delayed write)
-	store := newAtomicMemoryDelayStore(60 * time.Second)
+	store := newDelayStore(60 * time.Second)
 
 	router := gin.New()
 	router.GET("/atomic", CachePageAtomic(store, time.Second*5, func(c *gin.Context) {
@@ -144,22 +144,22 @@ func performRequest(method, target string, router *gin.Engine) *httptest.Respons
 	return w
 }
 
-type atomicMemoryDelayStore struct {
+type memoryDelayStore struct {
 	*persistence.InMemoryStore
 }
 
-func newAtomicMemoryDelayStore(defaultExpiration time.Duration) *atomicMemoryDelayStore {
-	v := &atomicMemoryDelayStore{}
+func newDelayStore(defaultExpiration time.Duration) *memoryDelayStore {
+	v := &memoryDelayStore{}
 	v.InMemoryStore = persistence.NewInMemoryStore(defaultExpiration)
 	return v
 }
 
-func (c *atomicMemoryDelayStore) Set(key string, value interface{}, expires time.Duration) error {
+func (c *memoryDelayStore) Set(key string, value interface{}, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Set(key, value, expires)
 }
 
-func (c *atomicMemoryDelayStore) Add(key string, value interface{}, expires time.Duration) error {
+func (c *memoryDelayStore) Add(key string, value interface{}, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Add(key, value, expires)
 }
