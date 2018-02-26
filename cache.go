@@ -8,6 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"github.com/lox/httpcache"
+	"net/http/httputil"
+	"encoding/json"
+	"io/ioutil"
+	"fmt"
+	"errors"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -70,9 +76,13 @@ func (w *cachedWriter) Written() bool {
 	return w.ResponseWriter.Written()
 }
 
+func (w *cachedWriter) IsSuccess() bool {
+	return w.Status() == 200 || w.Status() == 202
+}
+
 func (w *cachedWriter) Write(data []byte) (int, error) {
 	ret, err := w.ResponseWriter.Write(data)
-	if err == nil {
+	if err == nil  &&  w.IsSuccess() {
 		store := w.store
 		var cache responseCache
 		if err := store.Get(w.key, &cache); err == nil {
@@ -95,7 +105,7 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 
 func (w *cachedWriter) WriteString(data string) (n int, err error) {
 	ret, err := w.ResponseWriter.WriteString(data)
-	if err == nil {
+	if err == nil && w.IsSuccess() {
 		//cache response
 		store := w.store
 		val := responseCache{
@@ -119,8 +129,8 @@ func Cache(store *persistence.CacheStore) gin.HandlerFunc {
 func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+
+		key :=  httpcache.NewKey(c.Request.Method, c.Request.URL, c.Request.Header).String()
 		if err := store.Get(key, &cache); err != nil {
 			c.Next()
 		} else {
@@ -140,8 +150,8 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+		
+		key :=  httpcache.NewKey(c.Request.Method, c.Request.URL, c.Request.Header).String()
 		if err := store.Get(key, &cache); err != nil {
 			log.Println(err.Error())
 			// replace writer
@@ -159,3 +169,97 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 		}
 	}
 }
+
+
+func CachePageIncludeBodyAsKey(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		var cache responseCache
+		
+		key, err :=  newKeyWithBody(c.Request)
+		if err != nil {
+			log.Println(err.Error())
+			writer := newCachedWriter(store, expire, c.Writer, key)
+			c.Writer = writer
+			handle(c)
+		} else { 
+			if err = store.Get(key, &cache); err != nil {
+				log.Println(err.Error())
+				// replace writer
+				writer := newCachedWriter(store, expire, c.Writer, key)
+				c.Writer = writer
+				handle(c)
+			} else {
+				c.Writer.WriteHeader(cache.Status)
+				for k, vals := range cache.Header {
+					for _, v := range vals {
+						c.Writer.Header().Add(k, v)
+					}
+				}
+				c.Writer.Write(cache.Data)
+			}
+		}
+	}
+
+
+}
+
+func newKeyWithBody(r *http.Request) (string, error) {
+
+	if r.Body == nil {
+		return "", errors.New("no body")
+	}
+
+	dump, err := httputil.DumpRequest(r, false)
+	if err != nil {
+		return "", err
+	} else {
+		sortedBytes, err := sortBody(r)
+		if err == nil {
+			out := fmt.Sprintf("%v:%v", dump, sortedBytes)
+			//fmt.Printf("key = %s\n", out)
+			return out, nil
+		} else {
+			return "", err
+		}
+	}
+}
+
+
+func sortBody(r *http.Request) ([]byte, error) {
+	var buf bytes.Buffer
+  	if _, err := buf.ReadFrom(r.Body); err != nil {
+  		return nil, err
+  	}
+  		
+  	if err := r.Body.Close(); err != nil {
+  		return  nil, err
+  	}
+
+
+	// Note : json key order (including maps) is undefined. 
+	// but https://github.com/golang/go/issues/15424 says go sorts keys
+	// 
+	
+	// but we might get calls from non-go clients
+	// to get around this we marshall and unmarshall
+
+
+	var res interface{}
+	b := buf.Bytes()
+	err := json.Unmarshal(b, &res)
+	if err != nil {
+		// if it's not json, it will be caught here
+		return nil, err
+	}
+	bs, err := json.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Body = ioutil.NopCloser(bytes.NewReader(bs))
+	return bs, nil 
+}
+
+
+
