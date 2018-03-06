@@ -41,7 +41,7 @@ func TestCachePage(t *testing.T) {
 
 	router := gin.New()
 	router.GET("/cache_ping", CachePage(store, time.Second*3, func(c *gin.Context) {
-		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
 	w1 := performRequest("GET", "/cache_ping", router)
@@ -57,7 +57,7 @@ func TestCachePageExpire(t *testing.T) {
 
 	router := gin.New()
 	router.GET("/cache_ping", CachePage(store, time.Second, func(c *gin.Context) {
-		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
 	w1 := performRequest("GET", "/cache_ping", router)
@@ -75,7 +75,7 @@ func TestCacheHtmlFile(t *testing.T) {
 	router := gin.New()
 	router.LoadHTMLFiles("example/template.html")
 	router.GET("/cache_html", CachePage(store, time.Second*3, func(c *gin.Context) {
-		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().Unix())})
+		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().UnixNano())})
 	}))
 
 	w1 := performRequest("GET", "/cache_html", router)
@@ -92,7 +92,7 @@ func TestCacheHtmlFileExpire(t *testing.T) {
 	router := gin.New()
 	router.LoadHTMLFiles("example/template.html")
 	router.GET("/cache_html", CachePage(store, time.Second*1, func(c *gin.Context) {
-		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().Unix())})
+		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().UnixNano())})
 	}))
 
 	w1 := performRequest("GET", "/cache_html", router)
