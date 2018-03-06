@@ -73,8 +73,13 @@ func (w *cachedWriter) Written() bool {
 func (w *cachedWriter) Write(data []byte) (int, error) {
 	ret, err := w.ResponseWriter.Write(data)
 	if err == nil {
-		//cache response
 		store := w.store
+		var cache responseCache
+		if err := store.Get(w.key, &cache); err == nil {
+			data = append(cache.Data, data...)
+		}
+
+		//cache response
 		val := responseCache{
 			w.status,
 			w.Header(),
@@ -112,7 +117,6 @@ func Cache(store *persistence.CacheStore) gin.HandlerFunc {
 }
 
 func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
@@ -131,14 +135,13 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 	}
 }
 
-// Cache Decorator
+// CachePage Decorator
 func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
 		key := urlEscape(PageCachePrefix, url.RequestURI())
-		log.Println(key)
 		if err := store.Get(key, &cache); err != nil {
 			log.Println(err.Error())
 			// replace writer
@@ -150,7 +153,6 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 				store.Delete(key)
 			}
 		} else {
-			log.Println(cache.Status)
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
