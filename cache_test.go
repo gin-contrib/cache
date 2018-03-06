@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"log"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -38,15 +39,36 @@ func TestCachePage(t *testing.T) {
 
 	router := gin.New()
 	router.GET("/cache_ping", CachePage(store, time.Second*3, func(c *gin.Context) {
-		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
 	w1 := performRequest("GET", "/cache_ping", router)
+	time.Sleep(10 * time.Millisecond)
 	w2 := performRequest("GET", "/cache_ping", router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
 	assert.Equal(t, w1.Body.String(), w2.Body.String())
+}
+
+func TestCachePageError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_ping", CachePage(store, time.Second*5, func(c *gin.Context) {
+		now := "pong "+fmt.Sprint(time.Now().UnixNano())
+		log.Println(now)
+		c.String(500, now)
+	}))
+
+	w1 := performRequest("GET", "/cache_ping", router)
+	time.Sleep(10 * time.Millisecond)
+	w2 := performRequest("GET", "/cache_ping", router)
+
+	assert.Equal(t, 500, w1.Code)
+	assert.Equal(t, 500, w2.Code)
+	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
 }
 
 func TestCachePageExpire(t *testing.T) {
