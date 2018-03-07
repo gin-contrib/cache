@@ -69,6 +69,39 @@ func TestCachePageExpire(t *testing.T) {
 	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
 }
 
+func TestCachePageAtomic(t *testing.T) {
+	// memoryDelayStore is a wrapper of a InMemoryStore
+	// designed to simulate data race (by doing a delayed write)
+	store := newDelayStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/atomic", CachePageAtomic(store, time.Second*5, func(c *gin.Context) {
+		c.String(200, "OK")
+	}))
+
+	outp := make(chan string, 10)
+
+	for i := 0; i < 5; i++ {
+		go func() {
+			resp := performRequest("GET", "/atomic", router)
+			outp <- resp.Body.String()
+		}()
+	}
+	time.Sleep(time.Millisecond * 500)
+	for i := 0; i < 5; i++ {
+		go func() {
+			resp := performRequest("GET", "/atomic", router)
+			outp <- resp.Body.String()
+		}()
+	}
+	time.Sleep(time.Millisecond * 500)
+
+	for i := 0; i < 10; i++ {
+		v := <-outp
+		assert.Equal(t, "OK", v)
+	}
+}
+
 func TestCacheHtmlFile(t *testing.T) {
 	store := persistence.NewInMemoryStore(60 * time.Second)
 
@@ -109,4 +142,24 @@ func performRequest(method, target string, router *gin.Engine) *httptest.Respons
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, r)
 	return w
+}
+
+type memoryDelayStore struct {
+	*persistence.InMemoryStore
+}
+
+func newDelayStore(defaultExpiration time.Duration) *memoryDelayStore {
+	v := &memoryDelayStore{}
+	v.InMemoryStore = persistence.NewInMemoryStore(defaultExpiration)
+	return v
+}
+
+func (c *memoryDelayStore) Set(key string, value interface{}, expires time.Duration) error {
+	time.Sleep(time.Millisecond * 3)
+	return c.InMemoryStore.Set(key, value, expires)
+}
+
+func (c *memoryDelayStore) Add(key string, value interface{}, expires time.Duration) error {
+	time.Sleep(time.Millisecond * 3)
+	return c.InMemoryStore.Add(key, value, expires)
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/gin-contrib/cache/persistence"
@@ -157,5 +158,16 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			}
 			c.Writer.Write(cache.Data)
 		}
+	}
+}
+
+// CachePageAtomic Decorator
+func CachePageAtomic(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+	var m sync.Mutex
+	p := CachePage(store, expire, handle)
+	return func(c *gin.Context) {
+		m.Lock()
+		defer m.Unlock()
+		p(c)
 	}
 }
