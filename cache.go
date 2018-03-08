@@ -143,7 +143,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 		url := c.Request.URL
 		key := urlEscape(PageCachePrefix, url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
-			if err != ErrCacheMiss {
+			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
 			}
 			// replace writer
