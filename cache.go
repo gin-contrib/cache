@@ -173,3 +173,23 @@ func CachePageAtomic(store persistence.CacheStore, expire time.Duration, handle 
 		p(c)
 	}
 }
+
+func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var cache responseCache
+		url := c.Request.URL
+		key := urlEscape(PageCachePrefix, url.RequestURI())
+		if err := store.Get(key, &cache); err != nil {
+			if err != persistence.ErrCacheMiss {
+				log.Println(err.Error())
+			}
+			// replace writer
+			writer := newCachedWriter(store, expire, c.Writer, key)
+			c.Writer = writer
+			handle(c)
+		} else {
+			c.Writer.WriteHeader(cache.Status)
+			c.Writer.Write(cache.Data)
+		}
+	}
+}

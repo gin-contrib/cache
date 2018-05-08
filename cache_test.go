@@ -102,6 +102,43 @@ func TestCachePageAtomic(t *testing.T) {
 	}
 }
 
+func TestCachePageWithoutHeader(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_ping", CachePageWithoutHeader(store, time.Second*3, func(c *gin.Context) {
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
+	}))
+
+	w1 := performRequest("GET", "/cache_ping", router)
+	w2 := performRequest("GET", "/cache_ping", router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.NotNil(t, w1.Header()["Content-Type"])
+	assert.Nil(t, w2.Header()["Content-Type"])
+	assert.Equal(t, w1.Body.String(), w2.Body.String())
+}
+
+func TestCachePageWithoutHeaderExpire(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_ping", CachePage(store, time.Second, func(c *gin.Context) {
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
+	}))
+
+	w1 := performRequest("GET", "/cache_ping", router)
+	time.Sleep(time.Second * 2)
+	w2 := performRequest("GET", "/cache_ping", router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.NotNil(t, w1.Header()["Content-Type"])
+	assert.NotNil(t, w2.Header()["Content-Type"])
+	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
+}
+
 func TestCacheHtmlFile(t *testing.T) {
 	store := persistence.NewInMemoryStore(60 * time.Second)
 
