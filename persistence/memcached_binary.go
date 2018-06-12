@@ -19,6 +19,11 @@ func NewMemcachedBinaryStore(hostList, username, password string, defaultExpirat
 	return &MemcachedBinaryStore{mc.NewMC(hostList, username, password), defaultExpiration}
 }
 
+// NewMemcachedBinaryStoreWithConfig returns a MemcachedBinaryStore using the provided configuration
+func NewMemcachedBinaryStoreWithConfig(hostList, username, password string, defaultExpiration time.Duration, config *mc.Config) *MemcachedBinaryStore {
+	return &MemcachedBinaryStore{mc.NewMCwithConfig(hostList, username, password, config), defaultExpiration}
+}
+
 // Set (see CacheStore interface)
 func (s *MemcachedBinaryStore) Set(key string, value interface{}, expires time.Duration) error {
 	exp := s.getExpiration(expires)
