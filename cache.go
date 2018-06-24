@@ -39,6 +39,11 @@ type cachedWriter struct {
 
 var _ gin.ResponseWriter = &cachedWriter{}
 
+// CreateKey creates a package specific key for a given string
+func CreateKey(u string) string {
+	return urlEscape(PageCachePrefix, u)
+}
+
 func urlEscape(prefix string, u string) string {
 	key := url.QueryEscape(u)
 	if len(key) > 200 {
@@ -121,7 +126,7 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+		key := CreateKey(url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			c.Next()
 		} else {
@@ -142,7 +147,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+		key := CreateKey(url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
@@ -178,7 +183,7 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
-		key := urlEscape(PageCachePrefix, url.RequestURI())
+		key := CreateKey(url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
