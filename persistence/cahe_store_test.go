@@ -142,8 +142,8 @@ func testReplace(t *testing.T, newCache cacheFactory) {
 	cache := newCache(t, time.Hour)
 
 	// Replace in an empty cache.
-	if err = cache.Replace("notexist", 1, FOREVER); err != ErrNotStored {
-		t.Errorf("Replace in empty cache: expected ErrNotStored, got: %s", err)
+	if err = cache.Replace("notexist", 1, FOREVER); err != ErrNotStored && err != ErrCacheMiss {
+		t.Errorf("Replace in empty cache: expected ErrNotStored or ErrCacheMiss, got: %s", err)
 	}
 
 	// Set a value of 1, and replace it with 2
@@ -164,8 +164,8 @@ func testReplace(t *testing.T, newCache cacheFactory) {
 
 	// Wait for it to expire and replace with 3 (unsuccessfully).
 	time.Sleep(2 * time.Second)
-	if err = cache.Replace("int", 3, time.Second); err != ErrNotStored {
-		t.Errorf("Expected ErrNotStored, got: %s", err)
+	if err = cache.Replace("int", 3, time.Second); err != ErrNotStored && err != ErrCacheMiss {
+		t.Errorf("Expected ErrNotStored or ErrCacheMiss, got: %s", err)
 	}
 	if err = cache.Get("int", &i); err != ErrCacheMiss {
 		t.Errorf("Expected cache miss, got: %s", err)
