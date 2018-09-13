@@ -208,6 +208,44 @@ func TestCachePage400(t *testing.T) {
 	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
 }
 
+func TestCachePageWithoutHeaderAborted(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_aborted", CachePage(store, time.Second*3, func(c *gin.Context) {
+		c.AbortWithStatusJSON(200, map[string]int64{"time": time.Now().UnixNano()})
+	}))
+
+	w1 := performRequest("GET", "/cache_aborted", router)
+	time.Sleep(time.Millisecond * 500)
+	w2 := performRequest("GET", "/cache_aborted", router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.NotNil(t, w1.Header()["Content-Type"])
+	assert.NotNil(t, w2.Header()["Content-Type"])
+	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
+}
+
+func TestCachePageWithoutHeader400(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_400", CachePage(store, time.Second*3, func(c *gin.Context) {
+		c.String(400, fmt.Sprint(time.Now().UnixNano()))
+	}))
+
+	w1 := performRequest("GET", "/cache_400", router)
+	time.Sleep(time.Millisecond * 500)
+	w2 := performRequest("GET", "/cache_400", router)
+
+	assert.Equal(t, 400, w1.Code)
+	assert.Equal(t, 400, w2.Code)
+	assert.NotNil(t, w1.Header()["Content-Type"])
+	assert.NotNil(t, w2.Header()["Content-Type"])
+	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
+}
+
 func performRequest(method, target string, router *gin.Engine) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, nil)
 	w := httptest.NewRecorder()
