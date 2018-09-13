@@ -133,6 +133,13 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
+					if k == "Content-Encoding" && v == "gzip" {
+						continue
+					}
+					switch k {
+					case "Access-Control-Allow-Credentials", "Access-Control-Allow-Origin", "Access-Control-Expose-Headers", "Vary":
+						continue
+					}
 					c.Writer.Header().Add(k, v)
 				}
 			}
@@ -159,6 +166,10 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
+				switch k {
+				case "Access-Control-Allow-Credentials", "Access-Control-Allow-Origin", "Access-Control-Expose-Headers", "Vary":
+					continue
+				}
 				for _, v := range vals {
 					c.Writer.Header().Add(k, v)
 				}
