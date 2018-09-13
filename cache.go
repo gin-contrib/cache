@@ -143,7 +143,6 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 
 // CachePage Decorator
 func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
@@ -156,6 +155,10 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
 			handle(c)
+
+			if checkFailure(c) {
+				store.Delete(key)
+			}
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
@@ -192,9 +195,23 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
 			handle(c)
+
+			if checkFailure(c) {
+				store.Delete(key)
+			}
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			c.Writer.Write(cache.Data)
 		}
 	}
+}
+
+// Returns true is the context was not successful.
+// Successful contexts are non-aborted contexts with a status code of 2XX.
+// Note that contexts with a status code <200 aren't cached anyway.
+func checkFailure(c *gin.Context) bool {
+	if c.IsAborted() || c.Writer.Status() > 299 {
+		return true
+	}
+	return false
 }
