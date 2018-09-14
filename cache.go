@@ -87,7 +87,7 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 
 		//cache response
 		val := responseCache{
-			w.status,
+			w.Status(),
 			w.Header(),
 			data,
 		}
@@ -105,7 +105,7 @@ func (w *cachedWriter) WriteString(data string) (n int, err error) {
 		//cache response
 		store := w.store
 		val := responseCache{
-			w.status,
+			w.Status(),
 			w.Header(),
 			[]byte(data),
 		}
@@ -133,7 +133,7 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
-					c.Writer.Header().Add(k, v)
+					c.Writer.Header().Set(k, v)
 				}
 			}
 			c.Writer.Write(cache.Data)
@@ -163,7 +163,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
-					c.Writer.Header().Add(k, v)
+					c.Writer.Header().Set(k, v)
 				}
 			}
 			c.Writer.Write(cache.Data)

@@ -246,6 +246,23 @@ func TestCachePageWithoutHeader400(t *testing.T) {
 	assert.NotEqual(t, w1.Body.String(), w2.Body.String())
 }
 
+func TestCachePageStatus207(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_207", CachePage(store, time.Second*3, func(c *gin.Context) {
+		c.String(207, fmt.Sprint(time.Now().UnixNano()))
+	}))
+
+	w1 := performRequest("GET", "/cache_207", router)
+	time.Sleep(time.Millisecond * 500)
+	w2 := performRequest("GET", "/cache_207", router)
+
+	assert.Equal(t, 207, w1.Code)
+	assert.Equal(t, 207, w2.Code)
+	assert.Equal(t, w1.Body.String(), w2.Body.String())
+}
+
 func performRequest(method, target string, router *gin.Engine) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, nil)
 	w := httptest.NewRecorder()
