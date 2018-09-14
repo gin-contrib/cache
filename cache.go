@@ -87,7 +87,7 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 
 		//cache response
 		val := responseCache{
-			w.status,
+			w.Status(),
 			w.Header(),
 			data,
 		}
@@ -105,7 +105,7 @@ func (w *cachedWriter) WriteString(data string) (n int, err error) {
 		//cache response
 		store := w.store
 		val := responseCache{
-			w.status,
+			w.Status(),
 			w.Header(),
 			[]byte(data),
 		}
