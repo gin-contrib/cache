@@ -85,15 +85,17 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 			data = append(cache.Data, data...)
 		}
 
-		//cache response
-		val := responseCache{
-			w.Status(),
-			w.Header(),
-			data,
-		}
-		err = store.Set(w.key, val, w.expire)
-		if err != nil {
-			// need logger
+		//cache responses with a status code < 300
+		if w.Status() < 300 {
+			val := responseCache{
+				w.Status(),
+				w.Header(),
+				data,
+			}
+			err = store.Set(w.key, val, w.expire)
+			if err != nil {
+				// need logger
+			}
 		}
 	}
 	return ret, err
@@ -101,8 +103,8 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 
 func (w *cachedWriter) WriteString(data string) (n int, err error) {
 	ret, err := w.ResponseWriter.WriteString(data)
-	if err == nil {
-		//cache response
+	//cache responses with a status code < 300
+	if err == nil && w.Status() < 300 {
 		store := w.store
 		val := responseCache{
 			w.Status(),
@@ -155,6 +157,11 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
 			handle(c)
+
+			// Drop caches of aborted contexts
+			if c.IsAborted() {
+				store.Delete(key)
+			}
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
@@ -216,6 +223,11 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
 			handle(c)
+
+			// Drop caches of aborted contexts
+			if c.IsAborted() {
+				store.Delete(key)
+			}
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			c.Writer.Write(cache.Data)
