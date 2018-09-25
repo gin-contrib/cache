@@ -143,11 +143,35 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 
 // CachePage Decorator
 func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
 		key := CreateKey(url.RequestURI())
+		if err := store.Get(key, &cache); err != nil {
+			if err != persistence.ErrCacheMiss {
+				log.Println(err.Error())
+			}
+			// replace writer
+			writer := newCachedWriter(store, expire, c.Writer, key)
+			c.Writer = writer
+			handle(c)
+		} else {
+			c.Writer.WriteHeader(cache.Status)
+			for k, vals := range cache.Header {
+				for _, v := range vals {
+					c.Writer.Header().Set(k, v)
+				}
+			}
+			c.Writer.Write(cache.Data)
+		}
+	}
+}
+
+// CachePageWithoutQuery add ability to ignore GET query parameters.
+func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var cache responseCache
+		key := CreateKey(c.Request.URL.Path)
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
