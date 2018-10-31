@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"sync"
 	"time"
+	"encoding/gob"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,10 @@ type responseCache struct {
 	Status int
 	Header http.Header
 	Data   []byte
+}
+// RegisterResponseCacheGob registers the responseCache type with the encoding/gob package
+func RegisterResponseCacheGob() {
+	gob.Register(responseCache{})
 }
 
 type cachedWriter struct {

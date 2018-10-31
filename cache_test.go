@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+	"encoding/gob"
+	"bytes"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -279,6 +281,21 @@ func TestCachePageWithoutQuery(t *testing.T) {
 	assert.Equal(t, w1.Body.String(), w2.Body.String())
 }
 
+func TestRegisterResponseCacheGob(t *testing.T) {
+	RegisterResponseCacheGob()
+	r := responseCache{Status:200, Data: []byte("test"),}
+	mCache := new(bytes.Buffer)
+	encCache := gob.NewEncoder(mCache)
+	err := encCache.Encode(r)
+	assert.Nil(t, err)
+	
+	var decodedResp responseCache
+	pCache := bytes.NewBuffer(mCache.Bytes())
+	decCache := gob.NewDecoder(pCache)
+	err = decCache.Decode(&decodedResp)
+	assert.Nil(t,err)
+
+}
 func performRequest(method, target string, router *gin.Engine) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, nil)
 	w := httptest.NewRecorder()
