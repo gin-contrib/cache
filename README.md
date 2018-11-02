@@ -56,3 +56,11 @@ func main() {
 	r.Run(":8080")
 }
 ```
+
+
+### How to develop
+
+install dependency
+```bash
+dep ensure
+```
