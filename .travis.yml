@@ -13,7 +13,8 @@ services:
   - memcached
 
 script:
-  - go test -v -covermode=atomic -coverprofile=coverage.out ./...
+  - go test -v ./persistence/...
+  - go test -v -covermode=atomic -coverprofile=coverage.out .
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
