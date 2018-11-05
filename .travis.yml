@@ -11,6 +11,7 @@ go:
 
 services:
   - memcached
+  - redis
 
 script:
   - go test -v ./persistence
