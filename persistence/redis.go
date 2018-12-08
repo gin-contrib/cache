@@ -186,6 +186,21 @@ func (c *RedisStore) IncrementAtomic(key string, delta uint64) (uint64, error) {
 	return uint64(newValue.(int64)), nil
 }
 
+// ExpireAt - special case for Redis storage to handle updating the TTL for the entry for when
+// a consumer wants to use this storage for something outside the standard cache contract.
+func (c *RedisStore) ExpireAt(key string, epoc uint64) error {
+	conn := c.pool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("EXPIREAT", key, epoc)
+	if ret == 0 {
+		return ErrCacheMiss
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Decrement (see CacheStore interface)
 func (c *RedisStore) Decrement(key string, delta uint64) (newValue uint64, err error) {
 	conn := c.pool.Get()

@@ -58,4 +58,23 @@ func incrAtomic(t *testing.T, newStore redisStoreFactory) {
 		t.Errorf("Expected 2, was %d", newValue)
 	}
 
+	err = store.ExpireAt("int", uint64(time.Now().Unix()+10))
+	if err != nil {
+		t.Errorf("Error setting expire at: %s", err.Error())
+	}
+	var value int
+	err = store.Get("int", &value)
+	if newValue != 2 {
+		t.Errorf("Expected 2, was %d", newValue)
+	}
+	err = store.ExpireAt("int", uint64(time.Now().Unix()+1))
+	time.Sleep(2 * time.Second)
+	err = store.Get("int", &value)
+	if newValue != 2 {
+		t.Errorf("Expected 2, was %d", newValue)
+	}
+	if err != ErrCacheMiss {
+		t.Errorf("Expected to NOT get the value, but got: %v", value)
+	}
+
 }
