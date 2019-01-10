@@ -9,8 +9,22 @@ go:
   - 1.11.x
   - tip
 
+services:
+  - memcached
+  - redis
+
+matrix:
+  fast_finish: true
+  include:
+  - go: 1.11.x
+    env: GO111MODULE=on
+
+install:
+  - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; else go get -t -v ./...; fi
+
 script:
-  - go test -v -covermode=atomic -coverprofile=coverage.out
+  - go test -v ./persistence
+  - go test -v -covermode=atomic -coverprofile=coverage.out .
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
