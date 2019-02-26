@@ -8,7 +8,7 @@ go:
   - 1.10.x
   - 1.11.x
   - 1.12.x
-  - tip
+  - master
 
 services:
   - memcached
@@ -18,6 +18,8 @@ matrix:
   fast_finish: true
   include:
   - go: 1.11.x
+    env: GO111MODULE=on
+  - go: 1.12.x
     env: GO111MODULE=on
 
 install:
