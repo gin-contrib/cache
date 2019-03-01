@@ -30,6 +30,9 @@ func TestRedisCache_TypicalGetSet(t *testing.T) {
 func TestRedisCache_IncrDecr(t *testing.T) {
 	incrDecr(t, newRedisStore)
 }
+func TestRedis_IncrAtomic(t *testing.T) {
+	incrAtomic(t, newRawRedisStore)
+}
 
 func TestRedisCache_Expiration(t *testing.T) {
 	expiration(t, newRedisStore)
