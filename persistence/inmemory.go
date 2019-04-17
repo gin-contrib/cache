@@ -17,6 +17,11 @@ func NewInMemoryStore(defaultExpiration time.Duration) *InMemoryStore {
 	return &InMemoryStore{*cache.New(defaultExpiration, time.Minute)}
 }
 
+// TODO: stub func
+func (c *InMemoryStore) Mget(values []interface{}, keys ...string) error {
+	return nil
+}
+
 // Get (see CacheStore interface)
 func (c *InMemoryStore) Get(key string, value interface{}) error {
 	val, found := c.Cache.Get(key)
@@ -36,6 +41,11 @@ func (c *InMemoryStore) Get(key string, value interface{}) error {
 func (c *InMemoryStore) Set(key string, value interface{}, expires time.Duration) error {
 	// NOTE: go-cache understands the values of DEFAULT and FOREVER
 	c.Cache.Set(key, value, expires)
+	return nil
+}
+
+// TODO: stub func
+func (c *InMemoryStore) MSetNX(expires time.Duration, kv ...interface{}) error {
 	return nil
 }
 

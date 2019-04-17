@@ -3,8 +3,8 @@ package persistence
 import (
 	"time"
 
-	"github.com/memcachier/mc"
 	"github.com/gin-contrib/cache/utils"
+	"github.com/memcachier/mc"
 )
 
 // MemcachedBinaryStore represents the cache with memcached persistence using
@@ -35,6 +35,11 @@ func (s *MemcachedBinaryStore) Set(key string, value interface{}, expires time.D
 	return convertMcError(err)
 }
 
+// TODO: stub func
+func (c *MemcachedBinaryStore) MSetNX(expires time.Duration, kv ...interface{}) error {
+	return nil
+}
+
 // Add (see CacheStore interface)
 func (s *MemcachedBinaryStore) Add(key string, value interface{}, expires time.Duration) error {
 	exp := s.getExpiration(expires)
@@ -55,6 +60,11 @@ func (s *MemcachedBinaryStore) Replace(key string, value interface{}, expires ti
 	}
 	_, err = s.Client.Replace(key, string(b), 0, exp, 0)
 	return convertMcError(err)
+}
+
+// TODO: stub func
+func (c *MemcachedBinaryStore) Mget(values []interface{}, keys ...string) error {
+	return nil
 }
 
 // Get (see CacheStore interface)

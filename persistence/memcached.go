@@ -23,6 +23,11 @@ func (c *MemcachedStore) Set(key string, value interface{}, expires time.Duratio
 	return c.invoke((*memcache.Client).Set, key, value, expires)
 }
 
+// TODO: stub func
+func (c *MemcachedStore) MSetNX(expires time.Duration, kv ...interface{}) error {
+	return nil
+}
+
 // Add (see CacheStore interface)
 func (c *MemcachedStore) Add(key string, value interface{}, expires time.Duration) error {
 	return c.invoke((*memcache.Client).Add, key, value, expires)
@@ -31,6 +36,11 @@ func (c *MemcachedStore) Add(key string, value interface{}, expires time.Duratio
 // Replace (see CacheStore interface)
 func (c *MemcachedStore) Replace(key string, value interface{}, expires time.Duration) error {
 	return c.invoke((*memcache.Client).Replace, key, value, expires)
+}
+
+// TODO: stub func
+func (c *MemcachedStore) Mget(values []interface{}, keys ...string) error {
+	return nil
 }
 
 // Get (see CacheStore interface)

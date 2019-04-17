@@ -23,6 +23,18 @@ var newRedisStore = func(t *testing.T, defaultExpiration time.Duration) CacheSto
 	panic("")
 }
 
+func TestRedisCache_MgetTwoKeys(t *testing.T) {
+	simpleMgetTwoKeys(t, newRedisStore)
+}
+
+func TestRedisCache_MsetNXTwoKeys(t *testing.T) {
+	simpleMsetNXTwoKeys(t, newRedisStore)
+}
+
+func TestRedisCache_MsetNXThenMgetThreeKeys(t *testing.T) {
+	msetNXThenMgetThreeKeys(t, newRedisStore)
+}
+
 func TestRedisCache_TypicalGetSet(t *testing.T) {
 	typicalGetSet(t, newRedisStore)
 }
