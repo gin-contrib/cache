@@ -82,8 +82,8 @@ func simpleMsetNXTwoKeys(t *testing.T, newCache cacheFactory) {
 	k2 := "test2"
 	v2 := "value2"
 
-	//cache.Delete(k1)
-	//cache.Delete(k2)
+	cache.Delete(k1)
+	cache.Delete(k2)
 	// mset two keys
 	err := cache.MSetNX(time.Hour, k1, v1, k2, v2)
 	if err != nil {
@@ -118,9 +118,9 @@ func msetNXThenMgetThreeKeys(t *testing.T, newCache cacheFactory) {
 	k3 := "test3"
 	v3 := "value3"
 
-	//cache.Delete(k1)
-	//cache.Delete(k2)
-	//cache.Delete(k3)
+	cache.Delete(k1)
+	cache.Delete(k2)
+	cache.Delete(k3)
 	// mset two keys
 	err := cache.MSetNX(time.Hour, k1, v1, k2, v2, k3, v3)
 	if err != nil {
