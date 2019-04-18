@@ -63,7 +63,7 @@ func (c *RedisStore) Set(key string, value interface{}, expires time.Duration) e
 	return c.invoke(conn.Do, key, value, expires)
 }
 
-// MSET if not exists (see CacheStore interface)
+// MSET add multiple items to redis cache if none of them already exists for the given keys. Return error otherwise.
 // kv is a list of key value pairs: k1, v1, k2, v2, ...
 func (c *RedisStore) MSetNX(expires time.Duration, kv ...interface{}) error {
 	l := len(kv)
@@ -145,7 +145,7 @@ func (c *RedisStore) Get(key string, ptrValue interface{}) error {
 	return utils.Deserialize(item, ptrValue)
 }
 
-// MGet (see CacheStore interface)
+// MGet retrieves a list of items for the list of keys provided. If an item does not exist, an ErrCacheMiss is returned.
 func (c *RedisStore) Mget(ptrValue []interface{}, keys ...string) error {
 	if len(ptrValue) != len(keys) {
 		return fmt.Errorf("Length of value array is different from number of keys. Got %v, requires %v", len(ptrValue), len(keys))
