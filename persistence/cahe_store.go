@@ -23,14 +23,8 @@ type CacheStore interface {
 	// whether the key was found.
 	Get(key string, value interface{}) error
 
-	// Mget retrieves a list of items, return in reference array values.
-	Mget(values []interface{}, keys ...string) error
-
 	// Set sets an item to the cache, replacing any existing item.
 	Set(key string, value interface{}, expire time.Duration) error
-
-	// Set multiple key value pairs, if key does not exist.
-	MSetNX(expires time.Duration, kv ...interface{}) error
 
 	// Add adds an item to the cache only if an item doesn't already exist for the given
 	// key, or if the existing item has expired. Returns an error otherwise.
