@@ -1,10 +1,10 @@
 package persistence
 
 import (
-	"time"
-
+	"fmt"
 	"github.com/gin-contrib/cache/utils"
 	"github.com/gomodule/redigo/redis"
+	"time"
 )
 
 // RedisStore represents the cache with redis persistence
@@ -63,6 +63,47 @@ func (c *RedisStore) Set(key string, value interface{}, expires time.Duration) e
 	return c.invoke(conn.Do, key, value, expires)
 }
 
+// MSET if not exists (see CacheStore interface)
+// kv is a list of key value pairs: k1, v1, k2, v2, ...
+func (c *RedisStore) MSetNX(expires time.Duration, kv ...interface{}) error {
+	l := len(kv)
+	if l%2 != 0 {
+		return fmt.Errorf("Got %v keys but %v values", l/2, l/2+1)
+	}
+	keys := []string{}
+	values := []interface{}{}
+	for i := 0; i < l; i += 2 {
+		if k, ok := kv[i].(string); !ok {
+			return fmt.Errorf("key %v: %v is not string", i, kv[i])
+		} else {
+			keys = append(keys, k)
+			values = append(values, kv[i+1])
+		}
+	}
+
+	ex := c.translateExpire(expires)
+
+	conn := c.pool.Get()
+	defer conn.Close()
+
+	conn.Send("MULTI")
+	for i := 0; i < len(keys); i++ {
+		b, err := utils.Serialize(values[i])
+		if err != nil {
+			return fmt.Errorf("Failed to serialize value %v: %v", i, values[i])
+		}
+		conn.Send("SETNX", keys[i], b)
+		if ex > 0 {
+			conn.Send("EXPIRE", keys[i], ex)
+		}
+	}
+	_, err := conn.Do("EXEC")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Add (see CacheStore interface)
 func (c *RedisStore) Add(key string, value interface{}, expires time.Duration) error {
 	conn := c.pool.Get()
@@ -102,6 +143,38 @@ func (c *RedisStore) Get(key string, ptrValue interface{}) error {
 		return err
 	}
 	return utils.Deserialize(item, ptrValue)
+}
+
+// MGet (see CacheStore interface)
+func (c *RedisStore) Mget(ptrValue []interface{}, keys ...string) error {
+	if len(ptrValue) != len(keys) {
+		return fmt.Errorf("Length of value array is different from number of keys. Got %v, requires %v", len(ptrValue), len(keys))
+	}
+	conn := c.pool.Get()
+	defer conn.Close()
+	var ks []interface{}
+	for _, k := range keys {
+		ks = append(ks, k)
+	}
+
+	raw, err := redis.Values(conn.Do("MGET", ks...))
+	if err != nil {
+		return err
+	}
+	if raw == nil {
+		return ErrCacheMiss
+	}
+	for idx, r := range raw {
+		item, err := redis.Bytes(r, err)
+		if err != nil {
+			return err
+		}
+		err = utils.Deserialize(item, ptrValue[idx])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func exists(conn redis.Conn, key string) bool {
@@ -253,4 +326,16 @@ func (c *RedisStore) invoke(f func(string, ...interface{}) (interface{}, error),
 	_, err = f("SET", key, b)
 	return err
 
+}
+
+// translate time duration to int32
+func (c *RedisStore) translateExpire(expires time.Duration) int32 {
+	result := expires
+	switch expires {
+	case DEFAULT:
+		result = c.defaultExpiration
+	case FOREVER:
+		result = time.Duration(0)
+	}
+	return int32(result / time.Second)
 }
