@@ -62,6 +62,7 @@ func TestRedisCache_Add(t *testing.T) {
 	testAdd(t, newRedisStore)
 }
 
+// The following tests are specific to RedisStore.
 func simpleMgetTwoKeys(t *testing.T, newCache cacheFactory) {
 	cache := newCache(t, time.Hour).(*RedisStore)
 	// set two keys and make sure set is successful
