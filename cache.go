@@ -3,15 +3,17 @@ package cache
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/gob"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-	"encoding/gob"
 
-	"github.com/gin-contrib/cache/persistence"
+	// "github.com/gin-contrib/cache/persistence"
+	"github.com/Jim-Lambert-Bose/cache/persistence"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +30,7 @@ type responseCache struct {
 	Header http.Header
 	Data   []byte
 }
+
 // RegisterResponseCacheGob registers the responseCache type with the encoding/gob package
 func RegisterResponseCacheGob() {
 	gob.Register(responseCache{})

@@ -2,9 +2,11 @@ package persistence
 
 import (
 	"fmt"
-	"github.com/gin-contrib/cache/utils"
-	"github.com/gomodule/redigo/redis"
+	//"github.com/gin-contrib/cache/utils"
 	"time"
+
+	"github.com/Jim-Lambert-Bose/cache/utils"
+	"github.com/gomodule/redigo/redis"
 )
 
 // RedisStore represents the cache with redis persistence
