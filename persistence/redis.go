@@ -1,12 +1,18 @@
 package persistence
 
 import (
+	"errors"
 	"fmt"
+
 	//"github.com/gin-contrib/cache/utils"
 	"time"
 
 	"github.com/Jim-Lambert-Bose/cache/utils"
 	"github.com/gomodule/redigo/redis"
+)
+
+var (
+	ErrCacheNoTTL = errors.New("cache: key has no TTL.")
 )
 
 // RedisStore represents the cache with redis persistence
@@ -88,15 +94,21 @@ func (c *RedisStore) MSetNX(expires time.Duration, kv ...interface{}) error {
 	conn := c.pool.Get()
 	defer conn.Close()
 
-	conn.Send("MULTI")
+	if err := conn.Send("MULTI"); err != nil {
+		return err
+	}
 	for i := 0; i < len(keys); i++ {
 		b, err := utils.Serialize(values[i])
 		if err != nil {
 			return fmt.Errorf("Failed to serialize value %v: %v", i, values[i])
 		}
-		conn.Send("SETNX", keys[i], b)
+		if err := conn.Send("SETNX", keys[i], b); err != nil {
+			return err
+		}
 		if ex > 0 {
-			conn.Send("EXPIRE", keys[i], ex)
+			if err := conn.Send("EXPIRE", keys[i], ex); err != nil {
+				return err
+			}
 		}
 	}
 	_, err := conn.Do("EXEC")
@@ -227,8 +239,12 @@ func (c *RedisStore) Increment(key string, delta uint64) (uint64, error) {
 func (c *RedisStore) IncrementCheckSet(key string, delta uint64) (uint64, error) {
 	conn := c.pool.Get()
 	defer conn.Close()
-	conn.Do("WATCH", key)
-	defer conn.Do("UNWATCH", key)
+	if _, err := conn.Do("WATCH", key); err != nil {
+		return 0, err
+	}
+	defer func() {
+		_, _ = conn.Do("UNWATCH", key)
+	}()
 	val, err := conn.Do("GET", key)
 	if val == nil {
 		return 0, ErrCacheMiss
@@ -274,6 +290,25 @@ func (c *RedisStore) ExpireAt(key string, epoc uint64) error {
 		return err
 	}
 	return nil
+}
+
+// GetExpiresIn returns the number of milliseconds until the key expires
+// returns ErrCacheNoTTL if no expiration is set on the entry
+func (c *RedisStore) GetExpiresIn(key string) (int64, error) {
+	conn := c.pool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("PTTL", key)
+	if err != nil {
+		return 0, err
+	}
+	ttl := ret.(int64)
+	if ttl == -2 {
+		return 0, ErrCacheMiss
+	}
+	if ttl == -1 {
+		return 0, ErrCacheNoTTL
+	}
+	return ret.(int64), nil
 }
 
 // Decrement (see CacheStore interface)

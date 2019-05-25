@@ -11,7 +11,10 @@ type redisStoreFactory func(*testing.T, time.Duration) *RedisStore
 var newRawRedisStore = func(t *testing.T, defaultExpiration time.Duration) *RedisStore {
 	c, err := net.Dial("tcp", redisTestServer)
 	if err == nil {
-		c.Write([]byte("flush_all\r\n"))
+		_, err := c.Write([]byte("flush_all\r\n"))
+		if err != nil {
+			t.Fatalf("Unexpected error: %s", err.Error())
+		}
 		c.Close()
 		redisCache := NewRedisCache(redisTestServer, "", defaultExpiration)
 		redisCache.Flush()
@@ -46,7 +49,7 @@ func incrAtomic(t *testing.T, newStore redisStoreFactory) {
 	if newValue != 110 {
 		t.Errorf("Expected 110, was %d", newValue)
 	}
-	newValue, err = store.IncrementCheckSet("badkey", 50)
+	_, err = store.IncrementCheckSet("badkey", 50)
 	if err != ErrCacheMiss {
 		t.Errorf("Error incrementing badkey.. should have been ErrCacheMiss")
 	}

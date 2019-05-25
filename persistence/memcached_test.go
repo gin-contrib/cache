@@ -12,7 +12,10 @@ const testServer = "localhost:11211"
 var newMemcachedStore = func(t *testing.T, defaultExpiration time.Duration) CacheStore {
 	c, err := net.Dial("tcp", testServer)
 	if err == nil {
-		c.Write([]byte("flush_all\r\n"))
+		_, err := c.Write([]byte("flush_all\r\n"))
+		if err != nil {
+			t.Fatalf("Unexpected error: %s", err.Error())
+		}
 		c.Close()
 		return NewMemcachedStore([]string{testServer}, defaultExpiration)
 	}

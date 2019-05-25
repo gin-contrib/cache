@@ -12,7 +12,10 @@ const redisTestServer = "localhost:6379"
 var newRedisStore = func(t *testing.T, defaultExpiration time.Duration) CacheStore {
 	c, err := net.Dial("tcp", redisTestServer)
 	if err == nil {
-		c.Write([]byte("flush_all\r\n"))
+		_, err := c.Write([]byte("flush_all\r\n"))
+		if err != nil {
+			t.Fatalf("Unexpected error: %s", err.Error())
+		}
 		c.Close()
 		redisCache := NewRedisCache(redisTestServer, "", defaultExpiration)
 		redisCache.Flush()
@@ -44,6 +47,10 @@ func TestRedisCache_IncrDecr(t *testing.T) {
 }
 func TestRedis_IncrAtomic(t *testing.T) {
 	incrAtomic(t, newRawRedisStore)
+}
+
+func TestRedis_GetExpiresIn(t *testing.T) {
+	getExpiresIn(t, newRawRedisStore)
 }
 
 func TestRedisCache_Expiration(t *testing.T) {
@@ -117,8 +124,12 @@ func simpleMsetNXTwoKeys(t *testing.T, newCache cacheFactory) {
 	k2 := "test2"
 	v2 := "value2"
 
-	cache.Delete(k1)
-	cache.Delete(k2)
+	if err := cache.Delete(k1); err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+	if err := cache.Delete(k2); err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
 	// mset two keys
 	err := cache.MSetNX(time.Hour, k1, v1, k2, v2)
 	if err != nil {
@@ -153,9 +164,15 @@ func msetNXThenMgetThreeKeys(t *testing.T, newCache cacheFactory) {
 	k3 := "test3"
 	v3 := "value3"
 
-	cache.Delete(k1)
-	cache.Delete(k2)
-	cache.Delete(k3)
+	if err := cache.Delete(k1); err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+	if err := cache.Delete(k2); err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+	if err := cache.Delete(k3); err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
 	// mset two keys
 	err := cache.MSetNX(time.Hour, k1, v1, k2, v2, k3, v3)
 	if err != nil {
