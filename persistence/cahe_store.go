@@ -2,23 +2,33 @@ package persistence
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
 const (
 	DEFAULT = time.Duration(0)
 	FOREVER = time.Duration(-1)
+
+	// CacheStore adapter names
+	AdapterRedisStore           = "redis"
+	AdapterInMemoryStore        = "memory"
+	AdapterMemcachedStore       = "memcache"
+	AdapterMemcachedBinaryStore = "memcachebinary"
 )
 
 var (
 	PageCachePrefix = "gincontrib.page.cache"
-	ErrCacheMiss    = errors.New("cache: key not found.")
-	ErrNotStored    = errors.New("cache: not stored.")
-	ErrNotSupport   = errors.New("cache: not support.")
+	ErrCacheMiss    = errors.New("cache: key not found")
+	ErrNotStored    = errors.New("cache: not stored")
+	ErrNotSupport   = errors.New("cache: not support")
 )
 
 // CacheStore is the interface of a cache backend
 type CacheStore interface {
+	// New returns a new CacheStore associated with the configuration
+	New(opts Options) CacheStore
+
 	// Get retrieves an item from the cache. Returns the item or nil, and a bool indicating
 	// whether the key was found.
 	Get(key string, value interface{}) error
@@ -45,4 +55,48 @@ type CacheStore interface {
 
 	// Flush seletes all items from the cache.
 	Flush() error
+}
+
+// Options contains configuration for desired CacheStore
+type Options struct {
+	Adapter string
+	AdapterConfig
+	DefaultExpiration time.Duration
+}
+
+// AdapterConfig contains CacheStore specific configuration
+type AdapterConfig struct {
+	MemCachedConfig       *MemCachedConfig
+	MemcachedBinaryConfig *MemcachedBinaryConfig
+	RedisConfig           *RedisConfig
+}
+
+// NewCacheStore creates and returns a new CacheStore
+// associated with the adapter name and configuration
+// It returns error if the adapter isn't registered
+func NewCacheStore(opts Options) (CacheStore, error) {
+	if len(opts.Adapter) == 0 {
+		opts.Adapter = AdapterInMemoryStore
+	}
+	adapter, ok := adapters[opts.Adapter]
+	if !ok {
+		return nil, fmt.Errorf("cache: unknown adapter '%s'", opts.Adapter)
+	}
+	if opts.DefaultExpiration == time.Duration(0) {
+		opts.DefaultExpiration = time.Hour
+	}
+	return adapter.New(opts), nil
+}
+
+var adapters = make(map[string]CacheStore)
+
+// Register registers a cache store
+func Register(name string, adapter CacheStore) {
+	if adapter == nil {
+		panic("cache: can't register nil cache adapter")
+	}
+	if _, exist := adapters[name]; exist {
+		panic("cache: adapter '%s' already registered")
+	}
+	adapters[name] = adapter
 }

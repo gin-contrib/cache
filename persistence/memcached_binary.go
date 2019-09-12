@@ -3,8 +3,8 @@ package persistence
 import (
 	"time"
 
-	"github.com/memcachier/mc"
 	"github.com/gin-contrib/cache/utils"
+	"github.com/memcachier/mc"
 )
 
 // MemcachedBinaryStore represents the cache with memcached persistence using
@@ -14,14 +14,37 @@ type MemcachedBinaryStore struct {
 	defaultExpiration time.Duration
 }
 
-// NewMemcachedBinaryStore returns a MemcachedBinaryStore
-func NewMemcachedBinaryStore(hostList, username, password string, defaultExpiration time.Duration) *MemcachedBinaryStore {
-	return &MemcachedBinaryStore{mc.NewMC(hostList, username, password), defaultExpiration}
+// MemcachedBinaryConfig contains configuration for MemcachedBinaryStore
+// McConfig is optional
+type MemcachedBinaryConfig struct {
+	HostList string
+	Username string
+	Password string
+	McConfig *mc.Config
 }
 
-// NewMemcachedBinaryStoreWithConfig returns a MemcachedBinaryStore using the provided configuration
-func NewMemcachedBinaryStoreWithConfig(hostList, username, password string, defaultExpiration time.Duration, config *mc.Config) *MemcachedBinaryStore {
-	return &MemcachedBinaryStore{mc.NewMCwithConfig(hostList, username, password, config), defaultExpiration}
+// New returns a MemcachedBinaryStore type CacheStore associated with the provided configuration
+func (s *MemcachedBinaryStore) New(opts Options) CacheStore {
+	if opts.MemcachedBinaryConfig.McConfig != nil {
+		return &MemcachedBinaryStore{
+			Client: mc.NewMCwithConfig(
+				opts.MemcachedBinaryConfig.HostList,
+				opts.MemcachedBinaryConfig.Username,
+				opts.MemcachedBinaryConfig.Password,
+				opts.MemcachedBinaryConfig.McConfig,
+			),
+			defaultExpiration: opts.DefaultExpiration,
+		}
+	}
+
+	return &MemcachedBinaryStore{
+		Client: mc.NewMC(
+			opts.MemcachedBinaryConfig.HostList,
+			opts.MemcachedBinaryConfig.Username,
+			opts.MemcachedBinaryConfig.Password,
+		),
+		defaultExpiration: opts.DefaultExpiration,
+	}
 }
 
 // Set (see CacheStore interface)
@@ -117,4 +140,8 @@ func convertMcError(err error) error {
 		return ErrNotStored
 	}
 	return err
+}
+
+func init() {
+	Register(AdapterMemcachedBinaryStore, &MemcachedBinaryStore{})
 }
