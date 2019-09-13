@@ -4,6 +4,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // These tests require memcached running on localhost:11211 (the default)
@@ -14,7 +16,18 @@ var newMemcachedStore = func(t *testing.T, defaultExpiration time.Duration) Cach
 	if err == nil {
 		c.Write([]byte("flush_all\r\n"))
 		c.Close()
-		return NewMemcachedStore([]string{testServer}, defaultExpiration)
+		opts := Options{
+			Adapter: AdapterMemcachedStore,
+			AdapterConfig: AdapterConfig{
+				MemCachedConfig: &MemCachedConfig{
+					HostList: []string{testServer},
+				},
+			},
+			DefaultExpiration: defaultExpiration,
+		}
+		mcStore, err := NewCacheStore(opts)
+		assert.NoError(t, err)
+		return mcStore
 	}
 	t.Errorf("couldn't connect to memcached on %s", testServer)
 	t.FailNow()

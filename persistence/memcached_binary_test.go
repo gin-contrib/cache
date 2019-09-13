@@ -5,14 +5,27 @@ import (
 	"time"
 
 	"github.com/memcachier/mc"
+	"github.com/stretchr/testify/assert"
 )
 
 // These tests require memcached running on localhost:11211 (the default)
 const localhost = "localhost:11211"
 
 var newMcStore = func(t *testing.T, defaultExpiration time.Duration) CacheStore {
-	mcStore := NewMemcachedBinaryStore(localhost, "", "", defaultExpiration)
-	err := mcStore.Flush()
+	opts := Options{
+		Adapter: AdapterMemcachedBinaryStore,
+		AdapterConfig: AdapterConfig{
+			MemcachedBinaryConfig: &MemcachedBinaryConfig{
+				HostList: localhost,
+				Username: "",
+				Password: "",
+			},
+		},
+		DefaultExpiration: defaultExpiration,
+	}
+	mcStore, err := NewCacheStore(opts)
+	assert.NoError(t, err)
+	err = mcStore.Flush()
 	if err == nil {
 		return mcStore
 	}
@@ -48,8 +61,21 @@ func TestMemcachedBinary_Add(t *testing.T) {
 var newMcStoreWithConfig = func(t *testing.T, defaultExpiration time.Duration) CacheStore {
 	config := mc.DefaultConfig()
 	config.PoolSize = 2
-	mcStore := NewMemcachedBinaryStoreWithConfig(localhost, "", "", defaultExpiration, config)
-	err := mcStore.Flush()
+	opts := Options{
+		Adapter: AdapterMemcachedBinaryStore,
+		AdapterConfig: AdapterConfig{
+			MemcachedBinaryConfig: &MemcachedBinaryConfig{
+				HostList: localhost,
+				Username: "",
+				Password: "",
+				McConfig: config,
+			},
+		},
+		DefaultExpiration: defaultExpiration,
+	}
+	mcStore, err := NewCacheStore(opts)
+	assert.NoError(t, err)
+	err = mcStore.Flush()
 	if err == nil {
 		return mcStore
 	}
