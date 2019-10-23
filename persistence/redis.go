@@ -23,7 +23,12 @@ type RedisStore struct {
 
 // NewRedisCache returns a RedisStore
 // until redigo supports sharding/clustering, only one host will be in hostList
-func NewRedisCache(host string, password string, defaultExpiration time.Duration) *RedisStore {
+func NewRedisCache(host string, password string, defaultExpiration time.Duration, opt ...Option) *RedisStore {
+	opts := GetOpts(opt...)
+	selectDatabase := 0
+	if v, ok := opts[optionWithSelectDatabase].(int); ok {
+		selectDatabase = v
+	}
 	var pool = &redis.Pool{
 		MaxIdle:     5,
 		IdleTimeout: 240 * time.Second,
@@ -41,6 +46,13 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 			} else {
 				// check with PING
 				if _, err := c.Do("PING"); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+			if selectDatabase != 0 {
+				// logger.Debugf("NewRedisCache: select database %d", selectDatabase)
+				if _, err := c.Do("SELECT", selectDatabase); err != nil {
 					c.Close()
 					return nil, err
 				}

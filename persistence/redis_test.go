@@ -26,6 +26,22 @@ var newRedisStore = func(t *testing.T, defaultExpiration time.Duration) CacheSto
 	panic("")
 }
 
+func TestRedisStoreSelectDatabase(t *testing.T) {
+	c, err := net.Dial("tcp", redisTestServer)
+	if err != nil {
+		t.Errorf("couldn't connect to redis on %s", redisTestServer)
+	}
+	_, err = c.Write([]byte("flush_all\r\n"))
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+	c.Close()
+	redisCache := NewRedisCache(redisTestServer, "", 1*time.Second, WithSelectDatabase(1))
+	err = redisCache.Flush()
+	if err != nil {
+		t.Errorf("couldn't connect to redis on %s", redisTestServer)
+	}
+}
 func TestRedisCache_MgetTwoKeys(t *testing.T) {
 	simpleMgetTwoKeys(t, newRedisStore)
 }
