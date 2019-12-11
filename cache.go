@@ -3,13 +3,13 @@ package cache
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/gob"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-	"encoding/gob"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -149,7 +149,7 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 }
 
 // CachePage Decorator
-func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+func CachePage(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
@@ -161,7 +161,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			// replace writer
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
-			handle(c)
+			c.Next()
 
 			// Drop caches of aborted contexts
 			if c.IsAborted() {
@@ -180,7 +180,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 }
 
 // CachePageWithoutQuery add ability to ignore GET query parameters.
-func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
 		key := CreateKey(c.Request.URL.Path)
@@ -191,7 +191,7 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 			// replace writer
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
-			handle(c)
+			c.Next()
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
@@ -205,9 +205,9 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 }
 
 // CachePageAtomic Decorator
-func CachePageAtomic(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+func CachePageAtomic(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	var m sync.Mutex
-	p := CachePage(store, expire, handle)
+	p := CachePage(store, expire)
 	return func(c *gin.Context) {
 		m.Lock()
 		defer m.Unlock()
@@ -215,7 +215,7 @@ func CachePageAtomic(store persistence.CacheStore, expire time.Duration, handle 
 	}
 }
 
-func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
@@ -227,7 +227,7 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 			// replace writer
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
-			handle(c)
+			c.Next()
 
 			// Drop caches of aborted contexts
 			if c.IsAborted() {
