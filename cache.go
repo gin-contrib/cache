@@ -144,6 +144,8 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 				}
 			}
 			c.Writer.Write(cache.Data)
+			//Since have cache hit it's fine to abort any further handlers i guess
+			c.Abort()
 		}
 	}
 }
@@ -175,6 +177,8 @@ func CachePage(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 				}
 			}
 			c.Writer.Write(cache.Data)
+			//Since have cache hit it's fine to abort any further handlers i guess
+			c.Abort()
 		}
 	}
 }
@@ -200,6 +204,8 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration) g
 				}
 			}
 			c.Writer.Write(cache.Data)
+			//Since have cache hit it's fine to abort any further handlers i guess
+			c.Abort()
 		}
 	}
 }
@@ -236,6 +242,8 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration) 
 		} else {
 			c.Writer.WriteHeader(cache.Status)
 			c.Writer.Write(cache.Data)
+			//Since have cache hit it's fine to abort any further handlers i guess
+			c.Abort()
 		}
 	}
 }
