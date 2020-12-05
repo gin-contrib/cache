@@ -1,4 +1,4 @@
-module github.com/gin-contrib/cache
+module github.com/Jim-Lambert-Bose/cache
 
 go 1.13
 

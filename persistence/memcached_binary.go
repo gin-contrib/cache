@@ -3,8 +3,9 @@ package persistence
 import (
 	"time"
 
+	"github.com/Jim-Lambert-Bose/cache/utils"
+	// "github.com/gin-contrib/cache/utils"
 	"github.com/memcachier/mc"
-	"github.com/gin-contrib/cache/utils"
 )
 
 // MemcachedBinaryStore represents the cache with memcached persistence using
