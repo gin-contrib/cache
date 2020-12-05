@@ -13,9 +13,14 @@ type MemcachedStore struct {
 	defaultExpiration time.Duration
 }
 
-// NewMemcachedStore returns a MemcachedStore
-func NewMemcachedStore(hostList []string, defaultExpiration time.Duration) *MemcachedStore {
-	return &MemcachedStore{memcache.New(hostList...), defaultExpiration}
+// MemCachedConfig contains configuration for MemcachedStore
+type MemCachedConfig struct {
+	HostList []string
+}
+
+// New returns a MemcachedStore type CacheStore associated with the provided configuration
+func (c *MemcachedStore) New(opts Options) CacheStore {
+	return &MemcachedStore{memcache.New(opts.MemCachedConfig.HostList...), opts.DefaultExpiration}
 }
 
 // Set (see CacheStore interface)
@@ -96,4 +101,8 @@ func convertMemcacheError(err error) error {
 	}
 
 	return err
+}
+
+func init() {
+	Register(AdapterMemcachedStore, &MemcachedStore{})
 }

@@ -13,47 +13,57 @@ type RedisStore struct {
 	defaultExpiration time.Duration
 }
 
-// NewRedisCache returns a RedisStore
-// until redigo supports sharding/clustering, only one host will be in hostList
-func NewRedisCache(host string, password string, defaultExpiration time.Duration) *RedisStore {
-	var pool = &redis.Pool{
-		MaxIdle:     5,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			// the redis protocol should probably be made sett-able
-			c, err := redis.Dial("tcp", host)
-			if err != nil {
-				return nil, err
-			}
-			if len(password) > 0 {
-				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
-					return nil, err
-				}
-			} else {
-				// check with PING
-				if _, err := c.Do("PING"); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			return c, err
-		},
-		// custom connection test method
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			if _, err := c.Do("PING"); err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	return &RedisStore{pool, defaultExpiration}
+// RedisConfig contains configuration for RedisStore
+// Pool and (Host & Password) are mutually exclusive
+// If you provide Pool then (Host & Password) will be ignored
+// otherwise Host & Password will be used
+type RedisConfig struct {
+	Host     string
+	Password string
+	Pool     *redis.Pool
 }
 
-// NewRedisCacheWithPool returns a RedisStore using the provided pool
+// New returns a RedisStore type CacheStore associated with the provided configuration
 // until redigo supports sharding/clustering, only one host will be in hostList
-func NewRedisCacheWithPool(pool *redis.Pool, defaultExpiration time.Duration) *RedisStore {
-	return &RedisStore{pool, defaultExpiration}
+func (c *RedisStore) New(opts Options) CacheStore {
+	if opts.RedisConfig.Pool == nil {
+		opts.RedisConfig.Pool = &redis.Pool{
+			MaxIdle:     5,
+			IdleTimeout: 240 * time.Second,
+			Dial: func() (redis.Conn, error) {
+				// the redis protocol should probably be made sett-able
+				c, err := redis.Dial("tcp", opts.RedisConfig.Host)
+				if err != nil {
+					return nil, err
+				}
+				if len(opts.RedisConfig.Password) > 0 {
+					if _, err := c.Do("AUTH", opts.RedisConfig.Password); err != nil {
+						c.Close()
+						return nil, err
+					}
+				} else {
+					// check with PING
+					if _, err := c.Do("PING"); err != nil {
+						c.Close()
+						return nil, err
+					}
+				}
+				return c, err
+			},
+			// custom connection test method
+			TestOnBorrow: func(c redis.Conn, t time.Time) error {
+				if _, err := c.Do("PING"); err != nil {
+					return err
+				}
+				return nil
+			},
+		}
+	}
+
+	return &RedisStore{
+		pool:              opts.RedisConfig.Pool,
+		defaultExpiration: opts.DefaultExpiration,
+	}
 }
 
 // Set (see CacheStore interface)
@@ -200,4 +210,8 @@ func (c *RedisStore) invoke(f func(string, ...interface{}) (interface{}, error),
 	_, err = f("SET", key, b)
 	return err
 
+}
+
+func init() {
+	Register(AdapterRedisStore, &RedisStore{})
 }

@@ -12,9 +12,9 @@ type InMemoryStore struct {
 	cache.Cache
 }
 
-// NewInMemoryStore returns a InMemoryStore
-func NewInMemoryStore(defaultExpiration time.Duration) *InMemoryStore {
-	return &InMemoryStore{*cache.New(defaultExpiration, time.Minute)}
+// New returns a InMemoryStore type CacheStore associated with the provided expiration
+func (c *InMemoryStore) New(opts Options) CacheStore {
+	return &InMemoryStore{*cache.New(opts.DefaultExpiration, time.Minute)}
 }
 
 // Get (see CacheStore interface)
@@ -86,4 +86,8 @@ func (c *InMemoryStore) Decrement(key string, n uint64) (uint64, error) {
 func (c *InMemoryStore) Flush() error {
 	c.Cache.Flush()
 	return nil
+}
+
+func init() {
+	Register(AdapterInMemoryStore, &InMemoryStore{})
 }

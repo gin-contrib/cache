@@ -3,13 +3,13 @@ package cache
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/gob"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-	"encoding/gob"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -28,6 +28,7 @@ type responseCache struct {
 	Header http.Header
 	Data   []byte
 }
+
 // RegisterResponseCacheGob registers the responseCache type with the encoding/gob package
 func RegisterResponseCacheGob() {
 	gob.Register(responseCache{})
@@ -122,7 +123,7 @@ func (w *cachedWriter) WriteString(data string) (n int, err error) {
 }
 
 // Cache Middleware
-func Cache(store *persistence.CacheStore) gin.HandlerFunc {
+func Cache(store persistence.CacheStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(CACHE_MIDDLEWARE_KEY, store)
 		c.Next()

@@ -4,6 +4,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // These tests require redis server running on localhost:6379 (the default)
@@ -14,9 +16,20 @@ var newRedisStore = func(t *testing.T, defaultExpiration time.Duration) CacheSto
 	if err == nil {
 		c.Write([]byte("flush_all\r\n"))
 		c.Close()
-		redisCache := NewRedisCache(redisTestServer, "", defaultExpiration)
-		redisCache.Flush()
-		return redisCache
+		opts := Options{
+			Adapter: AdapterRedisStore,
+			AdapterConfig: AdapterConfig{
+				RedisConfig: &RedisConfig{
+					Host:     redisTestServer,
+					Password: "",
+				},
+			},
+			DefaultExpiration: defaultExpiration,
+		}
+		redisStore, err := NewCacheStore(opts)
+		assert.NoError(t, err)
+		redisStore.Flush()
+		return redisStore
 	}
 	t.Errorf("couldn't connect to redis on %s", redisTestServer)
 	t.FailNow()
