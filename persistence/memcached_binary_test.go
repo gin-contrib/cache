@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/memcachier/mc"
+	"github.com/memcachier/mc/v3"
 )
 
 // These tests require memcached running on localhost:11211 (the default)
