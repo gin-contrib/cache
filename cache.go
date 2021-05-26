@@ -3,13 +3,13 @@ package cache
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/gob"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-	"encoding/gob"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -28,6 +28,7 @@ type responseCache struct {
 	Header http.Header
 	Data   []byte
 }
+
 // RegisterResponseCacheGob registers the responseCache type with the encoding/gob package
 func RegisterResponseCacheGob() {
 	gob.Register(responseCache{})
@@ -136,15 +137,15 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 		key := CreateKey(url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			c.Next()
-		} else {
-			c.Writer.WriteHeader(cache.Status)
-			for k, vals := range cache.Header {
-				for _, v := range vals {
-					c.Writer.Header().Set(k, v)
-				}
-			}
-			c.Writer.Write(cache.Data)
+			return
 		}
+		c.Writer.WriteHeader(cache.Status)
+		for k, vals := range cache.Header {
+			for _, v := range vals {
+				c.Writer.Header().Set(k, v)
+			}
+		}
+		c.Writer.Write(cache.Data)
 	}
 }
 
@@ -152,8 +153,8 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := CreateKey(url.RequestURI())
+		requestUrl := c.Request.URL
+		key := CreateKey(requestUrl.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
@@ -167,15 +168,15 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 			if c.IsAborted() {
 				store.Delete(key)
 			}
-		} else {
-			c.Writer.WriteHeader(cache.Status)
-			for k, vals := range cache.Header {
-				for _, v := range vals {
-					c.Writer.Header().Set(k, v)
-				}
-			}
-			c.Writer.Write(cache.Data)
+			return
 		}
+		c.Writer.WriteHeader(cache.Status)
+		for k, vals := range cache.Header {
+			for _, v := range vals {
+				c.Writer.Header().Set(k, v)
+			}
+		}
+		c.Writer.Write(cache.Data)
 	}
 }
 
@@ -192,15 +193,15 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 			writer := newCachedWriter(store, expire, c.Writer, key)
 			c.Writer = writer
 			handle(c)
-		} else {
-			c.Writer.WriteHeader(cache.Status)
-			for k, vals := range cache.Header {
-				for _, v := range vals {
-					c.Writer.Header().Set(k, v)
-				}
-			}
-			c.Writer.Write(cache.Data)
+			return
 		}
+		c.Writer.WriteHeader(cache.Status)
+		for k, vals := range cache.Header {
+			for _, v := range vals {
+				c.Writer.Header().Set(k, v)
+			}
+		}
+		c.Writer.Write(cache.Data)
 	}
 }
 
@@ -233,9 +234,9 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 			if c.IsAborted() {
 				store.Delete(key)
 			}
-		} else {
-			c.Writer.WriteHeader(cache.Status)
-			c.Writer.Write(cache.Data)
+			return
 		}
+		c.Writer.WriteHeader(cache.Status)
+		c.Writer.Write(cache.Data)
 	}
 }
