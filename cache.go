@@ -1,15 +1,17 @@
 package cache
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha1"
+	"encoding/gob"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-	"encoding/gob"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -28,6 +30,7 @@ type responseCache struct {
 	Header http.Header
 	Data   []byte
 }
+
 // RegisterResponseCacheGob registers the responseCache type with the encoding/gob package
 func RegisterResponseCacheGob() {
 	gob.Register(responseCache{})
@@ -122,7 +125,7 @@ func (w *cachedWriter) WriteString(data string) (n int, err error) {
 }
 
 // Cache Middleware
-func Cache(store *persistence.CacheStore) gin.HandlerFunc {
+func Cache(store persistence.CacheStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(CACHE_MIDDLEWARE_KEY, store)
 		c.Next()
@@ -238,4 +241,24 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 			c.Writer.Write(cache.Data)
 		}
 	}
+}
+
+// when cache a file, use this function to read file data.
+func (w *cachedWriter) ReadFrom(src io.Reader) (n int64, err error) {
+	buf := new(bytes.Buffer)
+	// read a file
+	n, err = buf.ReadFrom(bufio.NewReader(src))
+
+	if err != nil {
+		fmt.Println(err)
+		return n, err
+	}
+	store := w.store
+	val := responseCache{
+		w.Status(),
+		w.Header(),
+		buf.Bytes(),
+	}
+	err = store.Set(w.key, val, w.expire)
+	return n, err
 }
