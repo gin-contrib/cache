@@ -9,12 +9,12 @@ import (
 
 //InMemoryStore represents the cache with memory persistence
 type InMemoryStore struct {
-	cache.Cache
+	*cache.Cache
 }
 
 // NewInMemoryStore returns a InMemoryStore
 func NewInMemoryStore(defaultExpiration time.Duration) *InMemoryStore {
-	return &InMemoryStore{*cache.New(defaultExpiration, time.Minute)}
+	return &InMemoryStore{cache.New(defaultExpiration, time.Minute)}
 }
 
 // Get (see CacheStore interface)
