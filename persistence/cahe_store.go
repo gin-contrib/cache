@@ -43,6 +43,6 @@ type CacheStore interface {
 	// Decrement decrements a real number, and returns error if the value is not real
 	Decrement(key string, data uint64) (uint64, error)
 
-	// Flush seletes all items from the cache.
+	// Flush deletes all items from the cache.
 	Flush() error
 }
