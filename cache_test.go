@@ -33,9 +33,27 @@ func TestWrite(t *testing.T) {
 	c.Writer.WriteHeader(204)
 	c.Writer.WriteHeaderNow()
 	c.Writer.Write([]byte("foo"))
+	writer.Close()
+
 	assert.Equal(t, 204, c.Writer.Status())
 	assert.Equal(t, "foo", w.Body.String())
 	assert.True(t, c.Writer.Written())
+}
+
+func TestCacheCustom(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_ping", CacheCustom(store, time.Second*3, func(c *gin.Context) {
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
+	}, RequestURIKey, WriteWithHeaders))
+
+	w1 := performRequest("GET", "/cache_ping", router)
+	w2 := performRequest("GET", "/cache_ping", router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.Equal(t, w1.Body.String(), w2.Body.String())
 }
 
 func TestCachePage(t *testing.T) {
