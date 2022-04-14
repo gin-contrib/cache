@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"io"
@@ -171,6 +172,10 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 	return handleCache(store, expire, handle, WithoutParamKey, WriteWithHeaders)
 }
 
+// CachePageWithBodyKey will cache a page with query parameters and a base64 string of the body content
+func CachePageWithBodyKey(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+	return handleCache(store, expire, handle, WithBodyKey, WriteWithHeaders)
+}
 func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
 	return handleCache(store, expire, handle, RequestURIKey, WriteWithoutHeaders)
 }
@@ -215,6 +220,17 @@ func RequestURIKey(c *gin.Context) string {
 
 func WithoutParamKey(c *gin.Context) string {
 	return CreateKey(c.Request.URL.Path)
+}
+
+func WithBodyKey(c *gin.Context) string {
+	body, _ := ioutil.ReadAll(c.Request.Body)
+	trimmed := strings.TrimSpace(string(body))
+	c.Request.Body = ioutil.NopCloser(bytes.NewReader(body))
+	return CreateKey(fmt.Sprintf(
+		"%s.%s",
+		c.Request.URL.RequestURI(),
+		base64.StdEncoding.EncodeToString([]byte(trimmed)),
+	))
 }
 
 func handleCache(
