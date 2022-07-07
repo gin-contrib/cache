@@ -3,13 +3,13 @@ package cache
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/gob"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-	"encoding/gob"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -28,6 +28,7 @@ type responseCache struct {
 	Header http.Header
 	Data   []byte
 }
+
 // RegisterResponseCacheGob registers the responseCache type with the encoding/gob package
 func RegisterResponseCacheGob() {
 	gob.Register(responseCache{})
@@ -53,7 +54,7 @@ func urlEscape(prefix string, u string) string {
 	key := url.QueryEscape(u)
 	if len(key) > 200 {
 		h := sha1.New()
-		io.WriteString(h, u)
+		_, _ = io.WriteString(h, u)
 		key = string(h.Sum(nil))
 	}
 	var buffer bytes.Buffer
@@ -98,9 +99,9 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 				data,
 			}
 			err = store.Set(w.key, val, w.expire)
-			if err != nil {
-				// need logger
-			}
+			// if err != nil {
+			// 	// need logger
+			// }
 		}
 	}
 	return ret, err
@@ -116,7 +117,7 @@ func (w *cachedWriter) WriteString(data string) (n int, err error) {
 			w.Header(),
 			[]byte(data),
 		}
-		store.Set(w.key, val, w.expire)
+		_ = store.Set(w.key, val, w.expire)
 	}
 	return ret, err
 }
@@ -143,7 +144,7 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 					c.Writer.Header().Set(k, v)
 				}
 			}
-			c.Writer.Write(cache.Data)
+			_, _ = c.Writer.Write(cache.Data)
 		}
 	}
 }
@@ -165,7 +166,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 
 			// Drop caches of aborted contexts
 			if c.IsAborted() {
-				store.Delete(key)
+				_ = store.Delete(key)
 			}
 		} else {
 			c.Writer.WriteHeader(cache.Status)
@@ -174,7 +175,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 					c.Writer.Header().Set(k, v)
 				}
 			}
-			c.Writer.Write(cache.Data)
+			_, _ = c.Writer.Write(cache.Data)
 		}
 	}
 }
@@ -199,7 +200,7 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 					c.Writer.Header().Set(k, v)
 				}
 			}
-			c.Writer.Write(cache.Data)
+			_, _ = c.Writer.Write(cache.Data)
 		}
 	}
 }
@@ -231,11 +232,11 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 
 			// Drop caches of aborted contexts
 			if c.IsAborted() {
-				store.Delete(key)
+				_ = store.Delete(key)
 			}
 		} else {
 			c.Writer.WriteHeader(cache.Status)
-			c.Writer.Write(cache.Data)
+			_, _ = c.Writer.Write(cache.Data)
 		}
 	}
 }
