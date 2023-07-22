@@ -1,4 +1,4 @@
-module github.com/gin-contrib/cache
+module github.com/ksong0xd/cache
 
 go 1.18
 
