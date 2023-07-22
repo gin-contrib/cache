@@ -181,7 +181,7 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 }
 
 
-// CachePage Decorator
+// CachePage Decorator to work with http header
 func CachePageWithHeader(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
