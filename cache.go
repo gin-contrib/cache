@@ -180,6 +180,38 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 	}
 }
 
+
+// CachePage Decorator
+func CachePageWithHeader(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var cache responseCache
+		url := c.Request.URL
+		header := strings.Join(c.Request.Header["X-Session-Data"], "-")
+		key := CreateKey(url.RequestURI() + header)
+		if err := store.Get(key, &cache); err != nil {
+			if err != persistence.ErrCacheMiss {
+				log.Println(err.Error())
+			}
+			// replace writer
+			writer := newCachedWriter(store, expire, c.Writer, key)
+			c.Writer = writer
+			handle(c)
+
+			// Drop caches of aborted contexts
+			if c.IsAborted() {
+				_ = store.Delete(key)
+			}
+		} else {
+			c.Writer.WriteHeader(cache.Status)
+			for k, vals := range cache.Header {
+				for _, v := range vals {
+					c.Writer.Header().Set(k, v)
+				}
+			}
+			_, _ = c.Writer.Write(cache.Data)
+		}
+	}
+}
 // CachePageWithoutQuery add ability to ignore GET query parameters.
 func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
