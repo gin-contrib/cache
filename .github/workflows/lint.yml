@@ -2,7 +2,7 @@ name: Run CI Lint
 on: push
 
 jobs:
-  test:
+  lint:
     strategy:
       matrix:
         os: [ubuntu-latest]
