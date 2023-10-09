@@ -21,7 +21,7 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			// the redis protocol should probably be made sett-able
-			c, err := redis.Dial("tcp", host)
+			c, err := redis.Dial("tcp", host, redis.DialConnectTimeout(10*time.Second))
 			if err != nil {
 				return nil, err
 			}
@@ -41,6 +41,11 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 		},
 		// custom connection test method
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			// don't need check connection every time.
+			if time.Since(t) < 30*time.Second {
+				return nil
+			}
+
 			if _, err := c.Do("PING"); err != nil {
 				return err
 			}
