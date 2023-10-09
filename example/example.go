@@ -13,11 +13,12 @@ func main() {
 	r := gin.Default()
 
 	store := persistence.NewInMemoryStore(60 * time.Second)
-	// Cached Page
+	// Non-cached Page
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
 	})
 
+	// Cached Page
 	r.GET("/cache_ping", cache.CachePage(store, time.Minute, func(c *gin.Context) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().Unix()))
 	}))
