@@ -7,6 +7,8 @@ import (
 	"github.com/robfig/go-cache"
 )
 
+var _ CacheStore = &InMemoryStore{}
+
 // InMemoryStore represents the cache with memory persistence
 type InMemoryStore struct {
 	cache.Cache

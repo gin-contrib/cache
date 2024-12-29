@@ -7,6 +7,8 @@ import (
 	"github.com/gin-contrib/cache/utils"
 )
 
+var _ CacheStore = &MemcachedStore{}
+
 // MemcachedStore represents the cache with memcached persistence
 type MemcachedStore struct {
 	*memcache.Client

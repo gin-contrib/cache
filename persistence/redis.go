@@ -7,6 +7,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+var _ CacheStore = &RedisStore{}
+
 // RedisStore represents the cache with redis persistence
 type RedisStore struct {
 	pool              *redis.Pool

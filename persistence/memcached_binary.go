@@ -7,6 +7,8 @@ import (
 	"github.com/memcachier/mc/v3"
 )
 
+var _ CacheStore = &MemcachedBinaryStore{}
+
 // MemcachedBinaryStore represents the cache with memcached persistence using
 // the binary protocol
 type MemcachedBinaryStore struct {
