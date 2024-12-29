@@ -8,7 +8,7 @@ import (
 )
 
 // Serialize returns a []byte representing the passed value
-func Serialize(value interface{}) ([]byte, error) {
+func Serialize(value any) ([]byte, error) {
 	if bytes, ok := value.([]byte); ok {
 		return bytes, nil
 	}
@@ -28,8 +28,8 @@ func Serialize(value interface{}) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// Deserialize deserialices the passed []byte into a the passed ptr interface{}
-func Deserialize(byt []byte, ptr interface{}) (err error) {
+// Deserialize deserialices the passed []byte into a the passed ptr any
+func Deserialize(byt []byte, ptr any) (err error) {
 	if bytes, ok := ptr.(*[]byte); ok {
 		*bytes = byt
 		return nil

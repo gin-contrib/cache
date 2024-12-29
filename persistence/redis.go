@@ -16,7 +16,7 @@ type RedisStore struct {
 // NewRedisCache returns a RedisStore
 // until redigo supports sharding/clustering, only one host will be in hostList
 func NewRedisCache(host string, password string, defaultExpiration time.Duration) *RedisStore {
-	var pool = &redis.Pool{
+	pool := &redis.Pool{
 		MaxIdle:     5,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -62,14 +62,14 @@ func NewRedisCacheWithPool(pool *redis.Pool, defaultExpiration time.Duration) *R
 }
 
 // Set (see CacheStore interface)
-func (c *RedisStore) Set(key string, value interface{}, expires time.Duration) error {
+func (c *RedisStore) Set(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
 	defer conn.Close()
 	return c.invoke(conn.Do, key, value, expires)
 }
 
 // Add (see CacheStore interface)
-func (c *RedisStore) Add(key string, value interface{}, expires time.Duration) error {
+func (c *RedisStore) Add(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
 	defer conn.Close()
 	if exists(conn, key) {
@@ -79,7 +79,7 @@ func (c *RedisStore) Add(key string, value interface{}, expires time.Duration) e
 }
 
 // Replace (see CacheStore interface)
-func (c *RedisStore) Replace(key string, value interface{}, expires time.Duration) error {
+func (c *RedisStore) Replace(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
 	defer conn.Close()
 	if !exists(conn, key) {
@@ -91,11 +91,10 @@ func (c *RedisStore) Replace(key string, value interface{}, expires time.Duratio
 	}
 
 	return err
-
 }
 
 // Get (see CacheStore interface)
-func (c *RedisStore) Get(key string, ptrValue interface{}) error {
+func (c *RedisStore) Get(key string, ptrValue any) error {
 	conn := c.pool.Get()
 	defer conn.Close()
 	raw, err := conn.Do("GET", key)
@@ -182,9 +181,9 @@ func (c *RedisStore) Flush() error {
 	return err
 }
 
-func (c *RedisStore) invoke(f func(string, ...interface{}) (interface{}, error),
-	key string, value interface{}, expires time.Duration) error {
-
+func (c *RedisStore) invoke(f func(string, ...any) (any, error),
+	key string, value any, expires time.Duration,
+) error {
 	switch expires {
 	case DEFAULT:
 		expires = c.defaultExpiration
@@ -204,5 +203,4 @@ func (c *RedisStore) invoke(f func(string, ...interface{}) (interface{}, error),
 
 	_, err = f("SET", key, b)
 	return err
-
 }

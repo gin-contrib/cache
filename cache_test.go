@@ -19,7 +19,7 @@ func init() {
 }
 
 func TestCache(t *testing.T) {
-	//TODO:unit test
+	// TODO:unit test
 }
 
 func TestWrite(t *testing.T) {
@@ -294,8 +294,8 @@ func TestRegisterResponseCacheGob(t *testing.T) {
 	decCache := gob.NewDecoder(pCache)
 	err = decCache.Decode(&decodedResp)
 	assert.Nil(t, err)
-
 }
+
 func performRequest(method, target string, router *gin.Engine) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, nil)
 	w := httptest.NewRecorder()
@@ -313,12 +313,12 @@ func newDelayStore(defaultExpiration time.Duration) *memoryDelayStore {
 	return v
 }
 
-func (c *memoryDelayStore) Set(key string, value interface{}, expires time.Duration) error {
+func (c *memoryDelayStore) Set(key string, value any, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Set(key, value, expires)
 }
 
-func (c *memoryDelayStore) Add(key string, value interface{}, expires time.Duration) error {
+func (c *memoryDelayStore) Add(key string, value any, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Add(key, value, expires)
 }

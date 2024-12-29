@@ -19,22 +19,22 @@ func NewMemcachedStore(hostList []string, defaultExpiration time.Duration) *Memc
 }
 
 // Set (see CacheStore interface)
-func (c *MemcachedStore) Set(key string, value interface{}, expires time.Duration) error {
+func (c *MemcachedStore) Set(key string, value any, expires time.Duration) error {
 	return c.invoke((*memcache.Client).Set, key, value, expires)
 }
 
 // Add (see CacheStore interface)
-func (c *MemcachedStore) Add(key string, value interface{}, expires time.Duration) error {
+func (c *MemcachedStore) Add(key string, value any, expires time.Duration) error {
 	return c.invoke((*memcache.Client).Add, key, value, expires)
 }
 
 // Replace (see CacheStore interface)
-func (c *MemcachedStore) Replace(key string, value interface{}, expires time.Duration) error {
+func (c *MemcachedStore) Replace(key string, value any, expires time.Duration) error {
 	return c.invoke((*memcache.Client).Replace, key, value, expires)
 }
 
 // Get (see CacheStore interface)
-func (c *MemcachedStore) Get(key string, value interface{}) error {
+func (c *MemcachedStore) Get(key string, value any) error {
 	item, err := c.Client.Get(key)
 	if err != nil {
 		return convertMemcacheError(err)
@@ -65,8 +65,8 @@ func (c *MemcachedStore) Flush() error {
 }
 
 func (c *MemcachedStore) invoke(storeFn func(*memcache.Client, *memcache.Item) error,
-	key string, value interface{}, expire time.Duration) error {
-
+	key string, value any, expire time.Duration,
+) error {
 	switch expire {
 	case DEFAULT:
 		expire = c.defaultExpiration

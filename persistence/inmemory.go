@@ -7,7 +7,7 @@ import (
 	"github.com/robfig/go-cache"
 )
 
-//InMemoryStore represents the cache with memory persistence
+// InMemoryStore represents the cache with memory persistence
 type InMemoryStore struct {
 	cache.Cache
 }
@@ -18,7 +18,7 @@ func NewInMemoryStore(defaultExpiration time.Duration) *InMemoryStore {
 }
 
 // Get (see CacheStore interface)
-func (c *InMemoryStore) Get(key string, value interface{}) error {
+func (c *InMemoryStore) Get(key string, value any) error {
 	val, found := c.Cache.Get(key)
 	if !found {
 		return ErrCacheMiss
@@ -33,14 +33,14 @@ func (c *InMemoryStore) Get(key string, value interface{}) error {
 }
 
 // Set (see CacheStore interface)
-func (c *InMemoryStore) Set(key string, value interface{}, expires time.Duration) error {
+func (c *InMemoryStore) Set(key string, value any, expires time.Duration) error {
 	// NOTE: go-cache understands the values of DEFAULT and FOREVER
 	c.Cache.Set(key, value, expires)
 	return nil
 }
 
 // Add (see CacheStore interface)
-func (c *InMemoryStore) Add(key string, value interface{}, expires time.Duration) error {
+func (c *InMemoryStore) Add(key string, value any, expires time.Duration) error {
 	err := c.Cache.Add(key, value, expires)
 	if err == cache.ErrKeyExists {
 		return ErrNotStored
@@ -49,7 +49,7 @@ func (c *InMemoryStore) Add(key string, value interface{}, expires time.Duration
 }
 
 // Replace (see CacheStore interface)
-func (c *InMemoryStore) Replace(key string, value interface{}, expires time.Duration) error {
+func (c *InMemoryStore) Replace(key string, value any, expires time.Duration) error {
 	if err := c.Cache.Replace(key, value, expires); err != nil {
 		return ErrNotStored
 	}

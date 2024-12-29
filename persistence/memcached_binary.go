@@ -25,7 +25,7 @@ func NewMemcachedBinaryStoreWithConfig(hostList, username, password string, defa
 }
 
 // Set (see CacheStore interface)
-func (s *MemcachedBinaryStore) Set(key string, value interface{}, expires time.Duration) error {
+func (s *MemcachedBinaryStore) Set(key string, value any, expires time.Duration) error {
 	exp := s.getExpiration(expires)
 	b, err := utils.Serialize(value)
 	if err != nil {
@@ -36,7 +36,7 @@ func (s *MemcachedBinaryStore) Set(key string, value interface{}, expires time.D
 }
 
 // Add (see CacheStore interface)
-func (s *MemcachedBinaryStore) Add(key string, value interface{}, expires time.Duration) error {
+func (s *MemcachedBinaryStore) Add(key string, value any, expires time.Duration) error {
 	exp := s.getExpiration(expires)
 	b, err := utils.Serialize(value)
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *MemcachedBinaryStore) Add(key string, value interface{}, expires time.D
 }
 
 // Replace (see CacheStore interface)
-func (s *MemcachedBinaryStore) Replace(key string, value interface{}, expires time.Duration) error {
+func (s *MemcachedBinaryStore) Replace(key string, value any, expires time.Duration) error {
 	exp := s.getExpiration(expires)
 	b, err := utils.Serialize(value)
 	if err != nil {
@@ -58,7 +58,7 @@ func (s *MemcachedBinaryStore) Replace(key string, value interface{}, expires ti
 }
 
 // Get (see CacheStore interface)
-func (s *MemcachedBinaryStore) Get(key string, value interface{}) error {
+func (s *MemcachedBinaryStore) Get(key string, value any) error {
 	val, _, _, err := s.Client.Get(key)
 	if err != nil {
 		return convertMcError(err)
