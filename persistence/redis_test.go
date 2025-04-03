@@ -13,9 +13,13 @@ var newRedisStore = func(t *testing.T, defaultExpiration time.Duration) CacheSto
 	c, err := net.Dial("tcp", redisTestServer)
 	if err == nil {
 		_, _ = c.Write([]byte("flush_all\r\n"))
-		c.Close()
+		if err := c.Close(); err != nil {
+			t.Errorf("Error closing connection: %v", err)
+		}
 		redisCache := NewRedisCache(redisTestServer, "", defaultExpiration)
-		redisCache.Flush()
+		if err := redisCache.Flush(); err != nil {
+			t.Errorf("Error flushing cache: %v", err)
+		}
 		return redisCache
 	}
 	t.Errorf("couldn't connect to redis on %s", redisTestServer)

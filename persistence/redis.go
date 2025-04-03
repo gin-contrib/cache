@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-contrib/cache/utils"
@@ -29,13 +30,17 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 			}
 			if len(password) > 0 {
 				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
+					if err := c.Close(); err != nil {
+						fmt.Printf("Error closing connection: %v\n", err)
+					}
 					return nil, err
 				}
 			} else {
 				// check with PING
 				if _, err := c.Do("PING"); err != nil {
-					c.Close()
+					if err := c.Close(); err != nil {
+						fmt.Printf("Error closing connection: %v\n", err)
+					}
 					return nil, err
 				}
 			}
@@ -66,14 +71,23 @@ func NewRedisCacheWithPool(pool *redis.Pool, defaultExpiration time.Duration) *R
 // Set (see CacheStore interface)
 func (c *RedisStore) Set(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			// Handle the error, e.g., log it
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	return c.invoke(conn.Do, key, value, expires)
 }
 
 // Add (see CacheStore interface)
 func (c *RedisStore) Add(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	if exists(conn, key) {
 		return ErrNotStored
 	}
@@ -83,7 +97,11 @@ func (c *RedisStore) Add(key string, value any, expires time.Duration) error {
 // Replace (see CacheStore interface)
 func (c *RedisStore) Replace(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	if !exists(conn, key) {
 		return ErrNotStored
 	}
@@ -98,7 +116,11 @@ func (c *RedisStore) Replace(key string, value any, expires time.Duration) error
 // Get (see CacheStore interface)
 func (c *RedisStore) Get(key string, ptrValue any) error {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	raw, err := conn.Do("GET", key)
 	if raw == nil {
 		return ErrCacheMiss
@@ -118,7 +140,11 @@ func exists(conn redis.Conn, key string) bool {
 // Delete (see CacheStore interface)
 func (c *RedisStore) Delete(key string) error {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	if !exists(conn, key) {
 		return ErrCacheMiss
 	}
@@ -129,7 +155,11 @@ func (c *RedisStore) Delete(key string) error {
 // Increment (see CacheStore interface)
 func (c *RedisStore) Increment(key string, delta uint64) (uint64, error) {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	// Check for existance *before* increment as per the cache contract.
 	// redis will auto create the key, and we don't want that. Since we need to do increment
 	// ourselves instead of natively via INCRBY (redis doesn't support wrapping), we get the value
@@ -157,7 +187,11 @@ func (c *RedisStore) Increment(key string, delta uint64) (uint64, error) {
 // Decrement (see CacheStore interface)
 func (c *RedisStore) Decrement(key string, delta uint64) (newValue uint64, err error) {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	// Check for existance *before* increment as per the cache contract.
 	// redis will auto create the key, and we don't want that, hence the exists call
 	if !exists(conn, key) {
@@ -178,7 +212,11 @@ func (c *RedisStore) Decrement(key string, delta uint64) (newValue uint64, err e
 // Flush (see CacheStore interface)
 func (c *RedisStore) Flush() error {
 	conn := c.pool.Get()
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 	_, err := conn.Do("FLUSHALL")
 	return err
 }

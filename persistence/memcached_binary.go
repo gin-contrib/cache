@@ -70,18 +70,18 @@ func (s *MemcachedBinaryStore) Get(key string, value any) error {
 
 // Delete (see CacheStore interface)
 func (s *MemcachedBinaryStore) Delete(key string) error {
-	return convertMcError(s.Client.Del(key))
+	return convertMcError(s.Del(key))
 }
 
 // Increment (see CacheStore interface)
 func (s *MemcachedBinaryStore) Increment(key string, delta uint64) (uint64, error) {
-	n, _, err := s.Client.Incr(key, delta, 0, 0xffffffff, 0)
+	n, _, err := s.Incr(key, delta, 0, 0xffffffff, 0)
 	return n, convertMcError(err)
 }
 
 // Decrement (see CacheStore interface)
 func (s *MemcachedBinaryStore) Decrement(key string, delta uint64) (uint64, error) {
-	n, _, err := s.Client.Decr(key, delta, 0, 0xffffffff, 0)
+	n, _, err := s.Decr(key, delta, 0, 0xffffffff, 0)
 	return n, convertMcError(err)
 }
 

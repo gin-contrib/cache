@@ -12,9 +12,9 @@ const (
 
 var (
 	PageCachePrefix = "gincontrib.page.cache"
-	ErrCacheMiss    = errors.New("cache: key not found.")
-	ErrNotStored    = errors.New("cache: not stored.")
-	ErrNotSupport   = errors.New("cache: not support.")
+	ErrCacheMiss    = errors.New("cache: key not found")
+	ErrNotStored    = errors.New("cache: not stored")
+	ErrNotSupport   = errors.New("cache: not support")
 )
 
 // CacheStore is the interface of a cache backend

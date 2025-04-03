@@ -13,7 +13,9 @@ var newMemcachedStore = func(t *testing.T, defaultExpiration time.Duration) Cach
 	c, err := net.Dial("tcp", testServer)
 	if err == nil {
 		_, _ = c.Write([]byte("flush_all\r\n"))
-		c.Close()
+		if err := c.Close(); err != nil {
+			t.Errorf("Error closing connection: %v", err)
+		}
 		return NewMemcachedStore([]string{testServer}, defaultExpiration)
 	}
 	t.Errorf("couldn't connect to memcached on %s", testServer)
