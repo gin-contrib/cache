@@ -23,7 +23,7 @@ Import it in your code:
 import "github.com/gin-contrib/cache"
 ```
 
-### Canonical example:
+### Canonical example
 
 See the [example](example/example.go)
 
