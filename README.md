@@ -63,6 +63,22 @@ func main() {
 }
 ```
 
+You can also use the `Delete` and `Flush` methods with the InMemory store:
+
+```go
+// Delete a specific cache entry by key
+err := store.Delete("your-cache-key")
+if err != nil {
+  // handle error
+}
+
+// Flush all cache entries
+err = store.Flush()
+if err != nil {
+  // handle error
+}
+```
+
 ### Redis Example
 
 Here is a complete example using Redis as the cache backend with `NewRedisCacheWithURL`:
