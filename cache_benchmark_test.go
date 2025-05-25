@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -27,11 +28,11 @@ func BenchmarkGenerateCacheKey_Long(b *testing.B) {
 }
 
 func generateLongQuery(n int) string {
-	s := ""
+	var builder strings.Builder
 	for i := 0; i < n; i++ {
-		s += fmt.Sprintf("k%d=v%d&", i, i)
+		builder.WriteString(fmt.Sprintf("k%d=v%d&", i, i))
 	}
-	return s
+	return builder.String()
 }
 
 func BenchmarkGenerateURLEscapeKey_Short(b *testing.B) {
