@@ -1,4 +1,4 @@
-# Cache gin's middleware
+# Cache middleware
 
 [![Build Status](https://github.com/gin-contrib/cache/actions/workflows/testing.yml/badge.svg)](https://github.com/gin-contrib/cache/actions/workflows/testing.yml)
 [![codecov](https://codecov.io/gh/gin-contrib/cache/branch/master/graph/badge.svg)](https://codecov.io/gh/gin-contrib/cache)
@@ -6,6 +6,12 @@
 [![GoDoc](https://godoc.org/github.com/gin-contrib/cache?status.svg)](https://godoc.org/github.com/gin-contrib/cache)
 
 Gin middleware/handler to enable Cache.
+
+- [Cache middleware](#cache-middleware)
+  - [Usage](#usage)
+    - [Start using it](#start-using-it)
+    - [InMemory Example](#inmemory-example)
+    - [Redis Example](#redis-example)
 
 ## Usage
 
