@@ -1,15 +1,16 @@
 package cache
 
 import (
-	"bytes"
-	"crypto/sha1"
 	"encoding/gob"
+	"encoding/hex"
 	"io"
 	"log"
 	"net/http"
-	"net/url"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/cespare/xxhash/v2"
 
 	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
@@ -19,9 +20,7 @@ const (
 	CACHE_MIDDLEWARE_KEY = "gincontrib.cache"
 )
 
-var (
-	PageCachePrefix = "gincontrib.page.cache"
-)
+var PageCachePrefix = "gincontrib.page.cache"
 
 type responseCache struct {
 	Status int
@@ -47,21 +46,36 @@ var _ gin.ResponseWriter = &cachedWriter{}
 
 // CreateKey creates a package specific key for a given string
 func CreateKey(u string) string {
-	return urlEscape(PageCachePrefix, u)
+	return generateCacheKey(PageCachePrefix, u)
 }
 
-func urlEscape(prefix string, u string) string {
-	key := url.QueryEscape(u)
-	if len(key) > 200 {
-		h := sha1.New()
-		_, _ = io.WriteString(h, u)
-		key = string(h.Sum(nil))
-	}
-	var buffer bytes.Buffer
-	buffer.WriteString(prefix)
-	buffer.WriteString(":")
-	buffer.WriteString(key)
-	return buffer.String()
+var hasherPool = sync.Pool{
+	New: func() interface{} {
+		return xxhash.New()
+	},
+}
+
+var builderPool = sync.Pool{
+	New: func() interface{} {
+		return &strings.Builder{}
+	},
+}
+
+func generateCacheKey(prefix string, u string) string {
+	h := hasherPool.Get().(*xxhash.Digest)
+	h.Reset()
+	_, _ = io.WriteString(h, u)
+	key := hex.EncodeToString(h.Sum(nil))
+	hasherPool.Put(h)
+
+	builder := builderPool.Get().(*strings.Builder)
+	builder.Reset()
+	builder.WriteString(prefix)
+	builder.WriteString(":")
+	builder.WriteString(key)
+	result := builder.String()
+	builderPool.Put(builder)
+	return result
 }
 
 func newCachedWriter(store persistence.CacheStore, expire time.Duration, writer gin.ResponseWriter, key string) *cachedWriter {
@@ -91,7 +105,7 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 			data = append(cache.Data, data...)
 		}
 
-		//cache responses with a status code < 300
+		// cache responses with a status code < 300
 		if w.Status() < 300 {
 			val := responseCache{
 				w.Status(),
@@ -109,7 +123,7 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 
 func (w *cachedWriter) WriteString(data string) (n int, err error) {
 	ret, err := w.ResponseWriter.WriteString(data)
-	//cache responses with a status code < 300
+	// cache responses with a status code < 300
 	if err == nil && w.Status() < 300 {
 		store := w.store
 		val := responseCache{
