@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/gomodule/redigo v1.9.2
 	github.com/memcachier/mc/v3 v3.0.3
