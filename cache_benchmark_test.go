@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
-	"net/url"
 	"testing"
 )
 
@@ -54,10 +53,9 @@ func BenchmarkGenerateURLEscapeKey_Long(b *testing.B) {
 }
 
 func urlEscape(prefix string, u string) string {
-	key := url.QueryEscape(u)
 	h := sha1.New()
 	_, _ = io.WriteString(h, u)
-	key = string(h.Sum(nil))
+	key := string(h.Sum(nil))
 	var buffer bytes.Buffer
 	buffer.WriteString(prefix)
 	buffer.WriteString(":")
