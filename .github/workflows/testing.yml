@@ -20,11 +20,6 @@ jobs:
       GO111MODULE: on
       GOPROXY: https://proxy.golang.org
     steps:
-      - name: Start Redis
-        uses: supercharge/redis-github-action@1.8.0
-        with:
-          redis-version: 4
-
       - uses: niden/actions-memcached@v7
 
       - name: Set up Go ${{ matrix.go }}
