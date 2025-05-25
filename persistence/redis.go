@@ -62,6 +62,27 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 	return &RedisStore{pool, defaultExpiration}
 }
 
+// NewRedisCacheWithURL returns a RedisStore using a redis URL and DialURL
+func NewRedisCacheWithURL(url string, defaultExpiration time.Duration) *RedisStore {
+	pool := &redis.Pool{
+		MaxIdle:     5,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.DialURL(url, redis.DialConnectTimeout(10*time.Second))
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			if time.Since(t) < 30*time.Second {
+				return nil
+			}
+			if _, err := c.Do("PING"); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
+	return &RedisStore{pool, defaultExpiration}
+}
+
 // NewRedisCacheWithPool returns a RedisStore using the provided pool
 // until redigo supports sharding/clustering, only one host will be in hostList
 func NewRedisCacheWithPool(pool *redis.Pool, defaultExpiration time.Duration) *RedisStore {
