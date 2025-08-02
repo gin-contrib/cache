@@ -145,7 +145,7 @@ func TestCacheHtmlFile(t *testing.T) {
 	store := persistence.NewInMemoryStore(60 * time.Second)
 
 	router := gin.New()
-	router.LoadHTMLFiles("example/template.html")
+	router.LoadHTMLFiles("_example/template.html")
 	router.GET("/cache_html", CachePage(store, time.Second*3, func(c *gin.Context) {
 		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().UnixNano())})
 	}))
@@ -162,7 +162,7 @@ func TestCacheHtmlFileExpire(t *testing.T) {
 	store := persistence.NewInMemoryStore(60 * time.Second)
 
 	router := gin.New()
-	router.LoadHTMLFiles("example/template.html")
+	router.LoadHTMLFiles("_example/template.html")
 	router.GET("/cache_html", CachePage(store, time.Second*1, func(c *gin.Context) {
 		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().UnixNano())})
 	}))
