@@ -31,7 +31,7 @@ import "github.com/gin-contrib/cache"
 
 ### InMemory Example
 
-See the [example](example/example.go)
+See the [example](_example/example.go)
 
 ```go
 package main
