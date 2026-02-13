@@ -1,7 +1,7 @@
 # Cache middleware
 
 [![Build Status](https://github.com/gin-contrib/cache/actions/workflows/testing.yml/badge.svg)](https://github.com/gin-contrib/cache/actions/workflows/testing.yml)
-[![Trivy Security Scan](https://github.com/gin-contrib/cache/actions/workflows/trivy.yml/badge.svg)](https://github.com/gin-contrib/cache/actions/workflows/trivy.yml)
+[![Trivy Security Scan](https://github.com/gin-contrib/cache/actions/workflows/trivy-scan.yml/badge.svg)](https://github.com/gin-contrib/cache/actions/workflows/trivy-scan.yml)
 [![codecov](https://codecov.io/gh/gin-contrib/cache/branch/master/graph/badge.svg)](https://codecov.io/gh/gin-contrib/cache)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gin-contrib/cache)](https://goreportcard.com/report/github.com/gin-contrib/cache)
 [![GoDoc](https://godoc.org/github.com/gin-contrib/cache?status.svg)](https://godoc.org/github.com/gin-contrib/cache)
