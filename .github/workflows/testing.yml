@@ -22,7 +22,7 @@ jobs:
       GO111MODULE: on
       GOPROXY: https://proxy.golang.org
     steps:
-      - uses: niden/actions-memcached@v7
+      - uses: niden/actions-memcached@v8
 
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v6
@@ -41,6 +41,6 @@ jobs:
           go test -bench=. -benchmem -run=^$ ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           flags: ${{ matrix.os }},go-${{ matrix.go }}
