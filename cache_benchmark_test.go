@@ -30,7 +30,7 @@ func BenchmarkGenerateCacheKey_Long(b *testing.B) {
 func generateLongQuery(n int) string {
 	var builder strings.Builder
 	for i := 0; i < n; i++ {
-		builder.WriteString(fmt.Sprintf("k%d=v%d&", i, i))
+		fmt.Fprintf(&builder, "k%d=v%d&", i, i)
 	}
 	return builder.String()
 }
