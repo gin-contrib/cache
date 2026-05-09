@@ -27,7 +27,7 @@ func (c *InMemoryStore) Get(key string, value any) error {
 	}
 
 	v := reflect.ValueOf(value)
-	if v.Type().Kind() == reflect.Ptr && v.Elem().CanSet() {
+	if v.Type().Kind() == reflect.Pointer && v.Elem().CanSet() {
 		v.Elem().Set(reflect.ValueOf(val))
 		return nil
 	}

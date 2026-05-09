@@ -35,7 +35,7 @@ func Deserialize(byt []byte, ptr any) (err error) {
 		return nil
 	}
 
-	if v := reflect.ValueOf(ptr); v.Kind() == reflect.Ptr {
+	if v := reflect.ValueOf(ptr); v.Kind() == reflect.Pointer {
 		switch p := v.Elem(); p.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			var i int64
