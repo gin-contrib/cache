@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,8 +48,8 @@ func TestCachePage(t *testing.T) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_ping", router)
-	w2 := performRequest("GET", "/cache_ping", router)
+	w1 := performRequest("GET", "/cache_ping", nil, router)
+	w2 := performRequest("GET", "/cache_ping", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -62,9 +64,9 @@ func TestCachePageExpire(t *testing.T) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_ping", router)
+	w1 := performRequest("GET", "/cache_ping", nil, router)
 	time.Sleep(time.Second * 2)
-	w2 := performRequest("GET", "/cache_ping", router)
+	w2 := performRequest("GET", "/cache_ping", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -85,14 +87,14 @@ func TestCachePageAtomic(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		go func() {
-			resp := performRequest("GET", "/atomic", router)
+			resp := performRequest("GET", "/atomic", nil, router)
 			outp <- resp.Body.String()
 		}()
 	}
 	time.Sleep(time.Millisecond * 500)
 	for i := 0; i < 5; i++ {
 		go func() {
-			resp := performRequest("GET", "/atomic", router)
+			resp := performRequest("GET", "/atomic", nil, router)
 			outp <- resp.Body.String()
 		}()
 	}
@@ -112,8 +114,8 @@ func TestCachePageWithoutHeader(t *testing.T) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_ping", router)
-	w2 := performRequest("GET", "/cache_ping", router)
+	w1 := performRequest("GET", "/cache_ping", nil, router)
+	w2 := performRequest("GET", "/cache_ping", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -130,9 +132,9 @@ func TestCachePageWithoutHeaderExpire(t *testing.T) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_ping", router)
+	w1 := performRequest("GET", "/cache_ping", nil, router)
 	time.Sleep(time.Second * 2)
-	w2 := performRequest("GET", "/cache_ping", router)
+	w2 := performRequest("GET", "/cache_ping", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -150,8 +152,8 @@ func TestCacheHtmlFile(t *testing.T) {
 		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().UnixNano())})
 	}))
 
-	w1 := performRequest("GET", "/cache_html", router)
-	w2 := performRequest("GET", "/cache_html", router)
+	w1 := performRequest("GET", "/cache_html", nil, router)
+	w2 := performRequest("GET", "/cache_html", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -167,9 +169,9 @@ func TestCacheHtmlFileExpire(t *testing.T) {
 		c.HTML(http.StatusOK, "template.html", gin.H{"values": fmt.Sprint(time.Now().UnixNano())})
 	}))
 
-	w1 := performRequest("GET", "/cache_html", router)
+	w1 := performRequest("GET", "/cache_html", nil, router)
 	time.Sleep(time.Second * 2)
-	w2 := performRequest("GET", "/cache_html", router)
+	w2 := performRequest("GET", "/cache_html", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -184,9 +186,9 @@ func TestCachePageAborted(t *testing.T) {
 		c.AbortWithStatusJSON(200, map[string]int64{"time": time.Now().UnixNano()})
 	}))
 
-	w1 := performRequest("GET", "/cache_aborted", router)
+	w1 := performRequest("GET", "/cache_aborted", nil, router)
 	time.Sleep(time.Millisecond * 500)
-	w2 := performRequest("GET", "/cache_aborted", router)
+	w2 := performRequest("GET", "/cache_aborted", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -201,9 +203,9 @@ func TestCachePage400(t *testing.T) {
 		c.String(400, fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_400", router)
+	w1 := performRequest("GET", "/cache_400", nil, router)
 	time.Sleep(time.Millisecond * 500)
-	w2 := performRequest("GET", "/cache_400", router)
+	w2 := performRequest("GET", "/cache_400", nil, router)
 
 	assert.Equal(t, 400, w1.Code)
 	assert.Equal(t, 400, w2.Code)
@@ -218,9 +220,9 @@ func TestCachePageWithoutHeaderAborted(t *testing.T) {
 		c.AbortWithStatusJSON(200, map[string]int64{"time": time.Now().UnixNano()})
 	}))
 
-	w1 := performRequest("GET", "/cache_aborted", router)
+	w1 := performRequest("GET", "/cache_aborted", nil, router)
 	time.Sleep(time.Millisecond * 500)
-	w2 := performRequest("GET", "/cache_aborted", router)
+	w2 := performRequest("GET", "/cache_aborted", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
@@ -237,9 +239,9 @@ func TestCachePageWithoutHeader400(t *testing.T) {
 		c.String(400, fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_400", router)
+	w1 := performRequest("GET", "/cache_400", nil, router)
 	time.Sleep(time.Millisecond * 500)
-	w2 := performRequest("GET", "/cache_400", router)
+	w2 := performRequest("GET", "/cache_400", nil, router)
 
 	assert.Equal(t, 400, w1.Code)
 	assert.Equal(t, 400, w2.Code)
@@ -256,9 +258,9 @@ func TestCachePageStatus207(t *testing.T) {
 		c.String(207, fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_207", router)
+	w1 := performRequest("GET", "/cache_207", nil, router)
 	time.Sleep(time.Millisecond * 500)
-	w2 := performRequest("GET", "/cache_207", router)
+	w2 := performRequest("GET", "/cache_207", nil, router)
 
 	assert.Equal(t, 207, w1.Code)
 	assert.Equal(t, 207, w2.Code)
@@ -273,12 +275,35 @@ func TestCachePageWithoutQuery(t *testing.T) {
 		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
 	}))
 
-	w1 := performRequest("GET", "/cache_without_query?foo=1", router)
-	w2 := performRequest("GET", "/cache_without_query?foo=2", router)
+	w1 := performRequest("GET", "/cache_without_query?foo=1", nil, router)
+	w2 := performRequest("GET", "/cache_without_query?foo=2", nil, router)
 
 	assert.Equal(t, 200, w1.Code)
 	assert.Equal(t, 200, w2.Code)
 	assert.Equal(t, w1.Body.String(), w2.Body.String())
+}
+
+func TestCachePageWithRequestBody(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+
+	router.POST("/cache_req_body", CachePageWithRequestBody(store, time.Second*3, func(c *gin.Context) {
+		c.String(200, "pong "+fmt.Sprint(time.Now().UnixNano()))
+	}))
+
+	w1 := performRequest("POST", "/cache_req_body", strings.NewReader(`{"name":"John","age":30}`), router)
+	w2 := performRequest("POST", "/cache_req_body", strings.NewReader(`{"name":"John","age":30}`), router)
+	w3 := performRequest("POST", "/cache_req_body", strings.NewReader(`{"name":"John","age":31}`), router)
+
+	assert.Equal(t, 200, w1.Code)
+	assert.Equal(t, 200, w2.Code)
+	assert.Equal(t, 200, w3.Code)
+
+	assert.Equal(t, w1.Body.String(), w2.Body.String())
+	assert.NotEqual(t, w1.Body.String(), w3.Body.String())
+	assert.NotEqual(t, w2.Body.String(), w3.Body.String())
+
 }
 
 func TestRegisterResponseCacheGob(t *testing.T) {
@@ -296,8 +321,8 @@ func TestRegisterResponseCacheGob(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func performRequest(method, target string, router *gin.Engine) *httptest.ResponseRecorder {
-	r := httptest.NewRequest(method, target, nil)
+func performRequest(method, target string, body io.Reader, router *gin.Engine) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(method, target, body)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, r)
 	return w

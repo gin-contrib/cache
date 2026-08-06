@@ -5,6 +5,7 @@ It supports pluggable cache stores, cache key generation, and decorators for pag
 package cache
 
 import (
+	"bytes"
 	"encoding/gob"
 	"encoding/hex"
 	"io"
@@ -311,5 +312,51 @@ func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, 
 			c.Writer.WriteHeader(cache.Status)
 			_, _ = c.Writer.Write(cache.Data)
 		}
+	}
+}
+
+/*
+CachePageWithRequestBody is a decorator that caches the response of the given handler based on both the request URI and the request body.
+*/
+func CachePageWithRequestBody(
+	store persistence.CacheStore,
+	expire time.Duration,
+	handle gin.HandlerFunc,
+) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+
+		body, err := c.GetRawData()
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+
+		key := CreateKey(c.Request.URL.String() + string(body))
+
+		var cache responseCache
+		if err := store.Get(key, &cache); err != nil {
+
+			writer := newCachedWriter(store, expire, c.Writer, key)
+			c.Writer = writer
+
+			handle(c)
+
+			if c.IsAborted() {
+				_ = store.Delete(key)
+			}
+			return
+		}
+
+		for k, vals := range cache.Header {
+			for _, v := range vals {
+				c.Writer.Header().Add(k, v)
+			}
+		}
+
+		c.Writer.WriteHeader(cache.Status)
+		_, _ = c.Writer.Write(cache.Data)
 	}
 }
