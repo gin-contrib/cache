@@ -203,12 +203,12 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 		if err := store.Get(key, &cache); err != nil {
 			c.Next()
 		} else {
-			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
 					c.Writer.Header().Set(k, v)
 				}
 			}
+			c.Writer.WriteHeader(cache.Status)
 			_, _ = c.Writer.Write(cache.Data)
 		}
 	}
@@ -236,12 +236,12 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 				_ = store.Delete(key)
 			}
 		} else {
-			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
 					c.Writer.Header().Set(k, v)
 				}
 			}
+			c.Writer.WriteHeader(cache.Status)
 			_, _ = c.Writer.Write(cache.Data)
 		}
 	}
@@ -262,12 +262,12 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 			c.Writer = writer
 			handle(c)
 		} else {
-			c.Writer.WriteHeader(cache.Status)
 			for k, vals := range cache.Header {
 				for _, v := range vals {
 					c.Writer.Header().Set(k, v)
 				}
 			}
+			c.Writer.WriteHeader(cache.Status)
 			_, _ = c.Writer.Write(cache.Data)
 		}
 	}

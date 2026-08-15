@@ -54,6 +54,22 @@ func TestCachePage(t *testing.T) {
 	assert.Equal(t, w1.Body.String(), w2.Body.String())
 }
 
+func TestCachePageRestoresHeadersBeforeWritingStatus(t *testing.T) {
+	store := persistence.NewInMemoryStore(60 * time.Second)
+
+	router := gin.New()
+	router.GET("/cache_headers", CachePage(store, time.Second*3, func(c *gin.Context) {
+		c.Header("X-Cache-Test", "present")
+		c.String(http.StatusCreated, "cached")
+	}))
+
+	_ = performRequest("GET", "/cache_headers", router)
+	cached := performRequest("GET", "/cache_headers", router)
+
+	assert.Equal(t, http.StatusCreated, cached.Code)
+	assert.Equal(t, "present", cached.Result().Header.Get("X-Cache-Test"))
+}
+
 func TestCachePageExpire(t *testing.T) {
 	store := persistence.NewInMemoryStore(60 * time.Second)
 
