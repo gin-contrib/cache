@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/gin-contrib/cache/actions/workflows/testing.yml/badge.svg)](https://github.com/gin-contrib/cache/actions/workflows/testing.yml)
 [![Trivy Security Scan](https://github.com/gin-contrib/cache/actions/workflows/trivy-scan.yml/badge.svg)](https://github.com/gin-contrib/cache/actions/workflows/trivy-scan.yml)
 [![codecov](https://codecov.io/gh/gin-contrib/cache/branch/master/graph/badge.svg)](https://codecov.io/gh/gin-contrib/cache)
-[![GoDoc](https://godoc.org/github.com/gin-contrib/cache?status.svg)](https://godoc.org/github.com/gin-contrib/cache)
+[![Go Reference](https://pkg.go.dev/badge/github.com/gin-contrib/cache.svg)](https://pkg.go.dev/github.com/gin-contrib/cache)
 
 Gin middleware/handler to enable Cache.
 
