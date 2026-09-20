@@ -6,7 +6,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        go: [1.26, 1.27]
+        # golangci-lint v2.12 binaries are built with Go 1.26.
+        go: [1.26]
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
 
