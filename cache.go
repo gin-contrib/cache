@@ -142,10 +142,6 @@ func (w *cachedWriter) Write(data []byte) (int, error) {
 	ret, err := w.ResponseWriter.Write(data)
 	if err == nil {
 		store := w.store
-		var cache responseCache
-		if err := store.Get(w.key, &cache); err == nil {
-			data = append(cache.Data, data...)
-		}
 
 		// Cache responses with a status code < 300
 		if w.Status() < 300 {
