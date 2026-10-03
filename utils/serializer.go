@@ -61,8 +61,5 @@ func Deserialize(byt []byte, ptr any) (err error) {
 
 	b := bytes.NewBuffer(byt)
 	decoder := gob.NewDecoder(b)
-	if err = decoder.Decode(ptr); err != nil {
-		return err
-	}
-	return nil
+	return decoder.Decode(ptr)
 }

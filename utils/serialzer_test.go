@@ -83,7 +83,13 @@ func TestDeserialize(t *testing.T) {
 			t.Errorf("Deserialize(%v, %v) returned error: %v", test.input, test.ptr, err)
 		}
 		if !reflect.DeepEqual(reflect.ValueOf(test.ptr).Elem().Interface(), test.expected) {
-			t.Errorf("Deserialize(%v, %v) = %v; want %v", test.input, test.ptr, reflect.ValueOf(test.ptr).Elem().Interface(), test.expected)
+			t.Errorf(
+				"Deserialize(%v, %v) = %v; want %v",
+				test.input,
+				test.ptr,
+				reflect.ValueOf(test.ptr).Elem().Interface(),
+				test.expected,
+			)
 		}
 	}
 
@@ -107,6 +113,12 @@ func TestDeserialize(t *testing.T) {
 		t.Errorf("Deserialize(%v, %v) returned error: %v", input, &outputStruct, err)
 	}
 	if !reflect.DeepEqual(outputStruct, inputStruct) {
-		t.Errorf("Deserialize(%v, %v) = %v; want %v", input, &outputStruct, outputStruct, inputStruct)
+		t.Errorf(
+			"Deserialize(%v, %v) = %v; want %v",
+			input,
+			&outputStruct,
+			outputStruct,
+			inputStruct,
+		)
 	}
 }

@@ -21,7 +21,7 @@ type redisTestContainer struct {
 func setupRedisContainer(t *testing.T, imageTag string) *redisTestContainer {
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image:        fmt.Sprintf("redis:%s", imageTag),
+		Image:        "redis:" + imageTag,
 		ExposedPorts: []string{"6379/tcp"},
 		WaitingFor:   wait.ForLog("Ready to accept connections"),
 	}
@@ -64,7 +64,11 @@ func newRedisStore(t *testing.T, defaultExpiration time.Duration, imageTag strin
 	return redisCache
 }
 
-func newRedisStoreWithURL(t *testing.T, defaultExpiration time.Duration, imageTag string) CacheStore {
+func newRedisStoreWithURL(
+	t *testing.T,
+	defaultExpiration time.Duration,
+	imageTag string,
+) CacheStore {
 	c := setupRedisContainer(t, imageTag)
 	t.Cleanup(func() { teardownRedisContainer(t, c) })
 
@@ -75,34 +79,56 @@ func newRedisStoreWithURL(t *testing.T, defaultExpiration time.Duration, imageTa
 	return redisCache
 }
 
-func runCommonTests(t *testing.T, factory func(*testing.T, time.Duration, string) CacheStore, imageTag string) {
+func runCommonTests(
+	t *testing.T,
+	factory func(*testing.T, time.Duration, string) CacheStore,
+	imageTag string,
+) {
 	t.Run("TypicalGetSet", func(t *testing.T) {
-		typicalGetSet(t, func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) })
+		typicalGetSet(
+			t,
+			func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) },
+		)
 	})
 	t.Run("IncrDecr", func(t *testing.T) {
-		incrDecr(t, func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) })
+		incrDecr(
+			t,
+			func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) },
+		)
 	})
 	t.Run("Expiration", func(t *testing.T) {
-		expiration(t, func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) })
+		expiration(
+			t,
+			func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) },
+		)
 	})
 	t.Run("EmptyCache", func(t *testing.T) {
-		emptyCache(t, func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) })
+		emptyCache(
+			t,
+			func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) },
+		)
 	})
 	t.Run("Replace", func(t *testing.T) {
-		testReplace(t, func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) })
+		testReplace(
+			t,
+			func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) },
+		)
 	})
 	t.Run("Add", func(t *testing.T) {
-		testAdd(t, func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) })
+		testAdd(
+			t,
+			func(t *testing.T, d time.Duration) CacheStore { return factory(t, d, imageTag) },
+		)
 	})
 }
 
 func TestRedisCache(t *testing.T) {
 	versions := []string{"8.0-alpine", "7.2-alpine", "6.2-alpine"}
 	for _, version := range versions {
-		t.Run(fmt.Sprintf("Standard_Redis_%s", version), func(t *testing.T) {
+		t.Run("Standard_Redis_"+version, func(t *testing.T) {
 			runCommonTests(t, newRedisStore, version)
 		})
-		t.Run(fmt.Sprintf("WithURL_Redis_%s", version), func(t *testing.T) {
+		t.Run("WithURL_Redis_"+version, func(t *testing.T) {
 			runCommonTests(t, newRedisStoreWithURL, version)
 		})
 	}

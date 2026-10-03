@@ -29,7 +29,7 @@ func BenchmarkGenerateCacheKey_Long(b *testing.B) {
 
 func generateLongQuery(n int) string {
 	var builder strings.Builder
-	for i := 0; i < n; i++ {
+	for i := range n {
 		fmt.Fprintf(&builder, "k%d=v%d&", i, i)
 	}
 	return builder.String()
@@ -53,7 +53,7 @@ func BenchmarkGenerateURLEscapeKey_Long(b *testing.B) {
 	}
 }
 
-func urlEscape(prefix string, u string) string {
+func urlEscape(prefix, u string) string {
 	h := sha1.New()
 	_, _ = io.WriteString(h, u)
 	key := string(h.Sum(nil))
