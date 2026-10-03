@@ -1,10 +1,11 @@
 package persistence
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/gin-contrib/cache/utils"
+
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -18,7 +19,7 @@ type RedisStore struct {
 
 // NewRedisCache returns a RedisStore
 // until redigo supports sharding/clustering, only one host will be in hostList
-func NewRedisCache(host string, password string, defaultExpiration time.Duration) *RedisStore {
+func NewRedisCache(host, password string, defaultExpiration time.Duration) *RedisStore {
 	pool := &redis.Pool{
 		MaxIdle:     5,
 		IdleTimeout: 240 * time.Second,
@@ -31,7 +32,7 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 			if len(password) > 0 {
 				if _, err := c.Do("AUTH", password); err != nil {
 					if err := c.Close(); err != nil {
-						fmt.Printf("Error closing connection: %v\n", err)
+						log.Printf("Error closing connection: %v", err)
 					}
 					return nil, err
 				}
@@ -39,7 +40,7 @@ func NewRedisCache(host string, password string, defaultExpiration time.Duration
 				// check with PING
 				if _, err := c.Do("PING"); err != nil {
 					if err := c.Close(); err != nil {
-						fmt.Printf("Error closing connection: %v\n", err)
+						log.Printf("Error closing connection: %v", err)
 					}
 					return nil, err
 				}
@@ -95,7 +96,7 @@ func (c *RedisStore) Set(key string, value any, expires time.Duration) error {
 	defer func() {
 		if err := conn.Close(); err != nil {
 			// Handle the error, e.g., log it
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	return c.invoke(conn.Do, key, value, expires)
@@ -106,7 +107,7 @@ func (c *RedisStore) Add(key string, value any, expires time.Duration) error {
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	if exists(conn, key) {
@@ -120,7 +121,7 @@ func (c *RedisStore) Replace(key string, value any, expires time.Duration) error
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	if !exists(conn, key) {
@@ -139,7 +140,7 @@ func (c *RedisStore) Get(key string, ptrValue any) error {
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	raw, err := conn.Do("GET", key)
@@ -163,7 +164,7 @@ func (c *RedisStore) Delete(key string) error {
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	if !exists(conn, key) {
@@ -178,7 +179,7 @@ func (c *RedisStore) Increment(key string, delta uint64) (uint64, error) {
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	// Check for existance *before* increment as per the cache contract.
@@ -210,7 +211,7 @@ func (c *RedisStore) Decrement(key string, delta uint64) (newValue uint64, err e
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	// Check for existance *before* increment as per the cache contract.
@@ -235,7 +236,7 @@ func (c *RedisStore) Flush() error {
 	conn := c.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
-			fmt.Printf("Error closing connection: %v\n", err)
+			log.Printf("Error closing connection: %v", err)
 		}
 	}()
 	_, err := conn.Do("FLUSHALL")

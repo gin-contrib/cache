@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-contrib/cache/utils"
+
 	"github.com/memcachier/mc/v3"
 )
 
@@ -17,13 +18,23 @@ type MemcachedBinaryStore struct {
 }
 
 // NewMemcachedBinaryStore returns a MemcachedBinaryStore
-func NewMemcachedBinaryStore(hostList, username, password string, defaultExpiration time.Duration) *MemcachedBinaryStore {
+func NewMemcachedBinaryStore(
+	hostList, username, password string,
+	defaultExpiration time.Duration,
+) *MemcachedBinaryStore {
 	return &MemcachedBinaryStore{mc.NewMC(hostList, username, password), defaultExpiration}
 }
 
 // NewMemcachedBinaryStoreWithConfig returns a MemcachedBinaryStore using the provided configuration
-func NewMemcachedBinaryStoreWithConfig(hostList, username, password string, defaultExpiration time.Duration, config *mc.Config) *MemcachedBinaryStore {
-	return &MemcachedBinaryStore{mc.NewMCwithConfig(hostList, username, password, config), defaultExpiration}
+func NewMemcachedBinaryStoreWithConfig(
+	hostList, username, password string,
+	defaultExpiration time.Duration,
+	config *mc.Config,
+) *MemcachedBinaryStore {
+	return &MemcachedBinaryStore{
+		mc.NewMCwithConfig(hostList, username, password, config),
+		defaultExpiration,
+	}
 }
 
 // Set (see CacheStore interface)

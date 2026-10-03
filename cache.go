@@ -14,14 +14,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
-
 	"github.com/gin-contrib/cache/persistence"
+
+	"github.com/cespare/xxhash/v2"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	CACHE_MIDDLEWARE_KEY = "gincontrib.cache"
+	CACHE_MIDDLEWARE_KEY = "gincontrib.cache" //nolint:staticcheck // ST1003: public const kept for backward compatibility
 )
 
 var PageCachePrefix = "gincontrib.page.cache"
@@ -69,7 +69,7 @@ func CreateKey(u string) string {
 hasherPool is a sync.Pool of xxhash.Digest objects for efficient hash computation.
 */
 var hasherPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return xxhash.New()
 	},
 }
@@ -78,7 +78,7 @@ var hasherPool = sync.Pool{
 builderPool is a sync.Pool of strings.Builder objects for efficient string concatenation.
 */
 var builderPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return &strings.Builder{}
 	},
 }
@@ -87,7 +87,7 @@ var builderPool = sync.Pool{
 generateCacheKey creates a cache key by hashing the input string and prepending the given prefix.
 It uses object pools for hashers and string builders to reduce allocations.
 */
-func generateCacheKey(prefix string, u string) string {
+func generateCacheKey(prefix, u string) string {
 	h := hasherPool.Get().(*xxhash.Digest)
 	h.Reset()
 	_, _ = io.WriteString(h, u)
@@ -107,7 +107,12 @@ func generateCacheKey(prefix string, u string) string {
 /*
 newCachedWriter constructs a new cachedWriter wrapping the given Gin ResponseWriter.
 */
-func newCachedWriter(store persistence.CacheStore, expire time.Duration, writer gin.ResponseWriter, key string) *cachedWriter {
+func newCachedWriter(
+	store persistence.CacheStore,
+	expire time.Duration,
+	writer gin.ResponseWriter,
+	key string,
+) *cachedWriter {
 	return &cachedWriter{writer, 0, false, store, expire, key}
 }
 
@@ -217,7 +222,13 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 // CachePage is a decorator that caches the response of the given handler based on the request URI.
 // If a cached response exists, it is served directly. Otherwise, the handler is executed and its response is cached.
 // If the context is aborted, the cache entry is deleted.
-func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+//
+//nolint:revive // exported func name kept for API compatibility
+func CachePage(
+	store persistence.CacheStore,
+	expire time.Duration,
+	handle gin.HandlerFunc,
+) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
@@ -249,7 +260,13 @@ func CachePage(store persistence.CacheStore, expire time.Duration, handle gin.Ha
 
 // CachePageWithoutQuery is a decorator that caches responses ignoring GET query parameters.
 // The cache key is based only on the request path, so all queries to the same path share the cache.
-func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+//
+//nolint:revive // exported func name kept for API compatibility
+func CachePageWithoutQuery(
+	store persistence.CacheStore,
+	expire time.Duration,
+	handle gin.HandlerFunc,
+) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
 		key := CreateKey(c.Request.URL.Path)
@@ -275,7 +292,13 @@ func CachePageWithoutQuery(store persistence.CacheStore, expire time.Duration, h
 
 // CachePageAtomic is a decorator that wraps CachePage with a mutex to ensure atomic access.
 // This prevents concurrent requests from generating duplicate cache entries for the same resource.
-func CachePageAtomic(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+//
+//nolint:revive // exported func name kept for API compatibility
+func CachePageAtomic(
+	store persistence.CacheStore,
+	expire time.Duration,
+	handle gin.HandlerFunc,
+) gin.HandlerFunc {
 	var m sync.Mutex
 	p := CachePage(store, expire, handle)
 	return func(c *gin.Context) {
@@ -289,7 +312,12 @@ func CachePageAtomic(store persistence.CacheStore, expire time.Duration, handle 
 CachePageWithoutHeader is a decorator that caches responses without restoring headers from the cache.
 Only the status and body are restored from the cache.
 */
-func CachePageWithoutHeader(store persistence.CacheStore, expire time.Duration, handle gin.HandlerFunc) gin.HandlerFunc {
+//nolint:revive // exported func name kept for API compatibility
+func CachePageWithoutHeader(
+	store persistence.CacheStore,
+	expire time.Duration,
+	handle gin.HandlerFunc,
+) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
 		url := c.Request.URL
