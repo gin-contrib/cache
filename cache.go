@@ -65,6 +65,10 @@ func CreateKey(u string) string {
 	return generateCacheKey(PageCachePrefix, u)
 }
 
+func createRequestKey(r *http.Request, resource string) string {
+	return CreateKey(r.Host + "\x00" + resource)
+}
+
 /*
 hasherPool is a sync.Pool of xxhash.Digest objects for efficient hash computation.
 */
@@ -203,8 +207,7 @@ If a cached response exists, it is written directly; otherwise, the request proc
 func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := CreateKey(url.RequestURI())
+		key := createRequestKey(c.Request, c.Request.URL.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			c.Next()
 		} else {
@@ -231,8 +234,7 @@ func CachePage(
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := CreateKey(url.RequestURI())
+		key := createRequestKey(c.Request, c.Request.URL.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
@@ -269,7 +271,7 @@ func CachePageWithoutQuery(
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		key := CreateKey(c.Request.URL.Path)
+		key := createRequestKey(c.Request, c.Request.URL.Path)
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
@@ -320,8 +322,7 @@ func CachePageWithoutHeader(
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cache responseCache
-		url := c.Request.URL
-		key := CreateKey(url.RequestURI())
+		key := createRequestKey(c.Request, c.Request.URL.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
 			if err != persistence.ErrCacheMiss {
 				log.Println(err.Error())
