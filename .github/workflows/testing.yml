@@ -1,4 +1,4 @@
-name: Run Testing
+name: Lint and Testing
 on:
   push:
     branches:
@@ -9,7 +9,33 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run daily at midnight UTC
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    strategy:
+      matrix:
+        go: ["1.26", "1.27"]
+    runs-on: ubuntu-latest
+    name: lint @ Go ${{ matrix.go }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: |
+            go.sum
+            go.tools.sum
+      - name: Run lint
+        run: make install-tools lint
+
   test:
     strategy:
       matrix:
@@ -37,11 +63,11 @@ jobs:
 
       - name: Run Tests
         run: |
-          go test -v ./persistence
-          go test -v -covermode=atomic -coverprofile=coverage.out .
+          make test
           go test -bench=. -benchmem -run=^$ ./...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
+          files: coverage.txt
           flags: ${{ matrix.os }},go-${{ matrix.go }}
