@@ -7,19 +7,19 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         # golangci-lint v2.12 binaries are built with Go 1.26.
-        go: [1.26]
+        go: ["1.26"]
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
 
     env:
       GO111MODULE: on
-      TESTTAGS: ${{ matrix.test-tags }}
       GOPROXY: https://proxy.golang.org
     steps:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
+          check-latest: true
 
       - name: Checkout Code
         uses: actions/checkout@v7
