@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"errors"
 	"reflect"
 	"time"
 
@@ -44,7 +45,7 @@ func (c *InMemoryStore) Set(key string, value any, expires time.Duration) error 
 // Add (see CacheStore interface)
 func (c *InMemoryStore) Add(key string, value any, expires time.Duration) error {
 	err := c.Cache.Add(key, value, expires)
-	if err == cache.ErrKeyExists {
+	if errors.Is(err, cache.ErrKeyExists) {
 		return ErrNotStored
 	}
 	return err
@@ -69,7 +70,7 @@ func (c *InMemoryStore) Delete(key string) error {
 // Increment (see CacheStore interface)
 func (c *InMemoryStore) Increment(key string, n uint64) (uint64, error) {
 	newValue, err := c.Cache.Increment(key, n)
-	if err == cache.ErrCacheMiss {
+	if errors.Is(err, cache.ErrCacheMiss) {
 		return 0, ErrCacheMiss
 	}
 	return newValue, err
@@ -78,7 +79,7 @@ func (c *InMemoryStore) Increment(key string, n uint64) (uint64, error) {
 // Decrement (see CacheStore interface)
 func (c *InMemoryStore) Decrement(key string, n uint64) (uint64, error) {
 	newValue, err := c.Cache.Decrement(key, n)
-	if err == cache.ErrCacheMiss {
+	if errors.Is(err, cache.ErrCacheMiss) {
 		return 0, ErrCacheMiss
 	}
 	return newValue, err
