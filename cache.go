@@ -7,6 +7,7 @@ package cache
 import (
 	"encoding/gob"
 	"encoding/hex"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -234,7 +235,7 @@ func CachePage(
 		url := c.Request.URL
 		key := CreateKey(url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
-			if err != persistence.ErrCacheMiss {
+			if !errors.Is(err, persistence.ErrCacheMiss) {
 				log.Println(err.Error())
 			}
 			// Replace writer with cachedWriter to intercept response
@@ -271,7 +272,7 @@ func CachePageWithoutQuery(
 		var cache responseCache
 		key := CreateKey(c.Request.URL.Path)
 		if err := store.Get(key, &cache); err != nil {
-			if err != persistence.ErrCacheMiss {
+			if !errors.Is(err, persistence.ErrCacheMiss) {
 				log.Println(err.Error())
 			}
 			// Replace writer with cachedWriter to intercept response
@@ -323,7 +324,7 @@ func CachePageWithoutHeader(
 		url := c.Request.URL
 		key := CreateKey(url.RequestURI())
 		if err := store.Get(key, &cache); err != nil {
-			if err != persistence.ErrCacheMiss {
+			if !errors.Is(err, persistence.ErrCacheMiss) {
 				log.Println(err.Error())
 			}
 			// Replace writer with cachedWriter to intercept response

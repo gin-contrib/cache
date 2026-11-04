@@ -3,6 +3,9 @@ package cache
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -334,4 +337,58 @@ func (c *memoryDelayStore) Set(key string, value any, expires time.Duration) err
 func (c *memoryDelayStore) Add(key string, value any, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Add(key, value, expires)
+}
+
+type failingGetStore struct {
+	persistence.CacheStore
+	err error
+}
+
+func (s failingGetStore) Get(string, any) error { return s.err }
+
+func TestCachePageErrorMatching(t *testing.T) {
+	originalOutput := log.Writer()
+	var output bytes.Buffer
+	log.SetOutput(&output)
+	t.Cleanup(func() { log.SetOutput(originalOutput) })
+
+	decorators := map[string]func(persistence.CacheStore, time.Duration, gin.HandlerFunc) gin.HandlerFunc{
+		"page":           CachePage,
+		"without_query":  CachePageWithoutQuery,
+		"without_header": CachePageWithoutHeader,
+	}
+	for name, decorate := range decorators {
+		t.Run(name, func(t *testing.T) {
+			for _, tc := range []struct {
+				name   string
+				err    error
+				logged bool
+			}{
+				{"miss", persistence.ErrCacheMiss, false},
+				{"wrapped_miss", fmt.Errorf("lookup: %w", persistence.ErrCacheMiss), false},
+				{"failure", errors.New("backend unavailable"), true},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					output.Reset()
+					store := failingGetStore{persistence.NewInMemoryStore(time.Minute), tc.err}
+					router := gin.New()
+					router.GET("/", decorate(store, time.Minute, func(c *gin.Context) {
+						c.String(http.StatusOK, "fresh response")
+					}))
+					w := httptest.NewRecorder()
+					router.ServeHTTP(
+						w,
+						httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil),
+					)
+					assert.Equal(t, http.StatusOK, w.Code)
+					assert.Equal(t, "fresh response", w.Body.String())
+					if tc.logged {
+						assert.Contains(t, output.String(), tc.err.Error())
+					} else {
+						assert.Empty(t, output.String())
+					}
+				})
+			}
+		})
+	}
 }

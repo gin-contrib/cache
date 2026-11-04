@@ -19,7 +19,7 @@ type redisTestContainer struct {
 }
 
 func setupRedisContainer(t *testing.T, imageTag string) *redisTestContainer {
-	ctx := context.Background()
+	ctx := t.Context()
 	req := testcontainers.ContainerRequest{
 		Image:        "redis:" + imageTag,
 		ExposedPorts: []string{"6379/tcp"},

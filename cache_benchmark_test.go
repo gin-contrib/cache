@@ -10,19 +10,17 @@ import (
 )
 
 func BenchmarkGenerateCacheKey_Short(b *testing.B) {
-	b.ResetTimer()
 	b.ReportAllocs()
 	key := "/api/v1/resource?id=123"
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = generateCacheKey("prefix", key)
 	}
 }
 
 func BenchmarkGenerateCacheKey_Long(b *testing.B) {
-	b.ResetTimer()
 	b.ReportAllocs()
 	longKey := "/api/v1/resource?" + generateLongQuery(1000)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = generateCacheKey("prefix", longKey)
 	}
 }
@@ -36,19 +34,17 @@ func generateLongQuery(n int) string {
 }
 
 func BenchmarkGenerateURLEscapeKey_Short(b *testing.B) {
-	b.ResetTimer()
 	b.ReportAllocs()
 	key := "/api/v1/resource?id=123"
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = urlEscape("prefix", key)
 	}
 }
 
 func BenchmarkGenerateURLEscapeKey_Long(b *testing.B) {
-	b.ResetTimer()
 	b.ReportAllocs()
 	longKey := "/api/v1/resource?" + generateLongQuery(1000)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = urlEscape("prefix", longKey)
 	}
 }
