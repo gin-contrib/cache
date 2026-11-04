@@ -335,3 +335,147 @@ func (c *memoryDelayStore) Add(key string, value any, expires time.Duration) err
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Add(key, value, expires)
 }
+
+func TestCachePageSeparatesHosts(t *testing.T) {
+	store := persistence.NewInMemoryStore(time.Minute)
+
+	router := gin.New()
+	calls := 0
+
+	router.GET("/profile", CachePage(
+		store,
+		time.Minute,
+		func(c *gin.Context) {
+			calls++
+			c.String(http.StatusOK, "tenant="+c.Request.Host)
+		},
+	))
+
+	hosts := []string{
+		"a.example.com",
+		"b.example.com",
+		"a.example.com",
+	}
+
+	for _, host := range hosts {
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"http://"+host+"/profile",
+			nil,
+		)
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "tenant="+host, w.Body.String())
+	}
+
+	assert.Equal(t, 2, calls)
+}
+
+func TestCacheVariantsSeparateHosts(t *testing.T) {
+	tests := []struct {
+		name string
+		wrap func(
+			persistence.CacheStore,
+			time.Duration,
+			gin.HandlerFunc,
+		) gin.HandlerFunc
+	}{
+		{"CachePage", CachePage},
+		{"CachePageWithoutQuery", CachePageWithoutQuery},
+		{"CachePageWithoutHeader", CachePageWithoutHeader},
+		{"CachePageAtomic", CachePageAtomic},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := persistence.NewInMemoryStore(time.Minute)
+			calls := 0
+
+			router := gin.New()
+			router.GET("/profile", tt.wrap(
+				store,
+				time.Minute,
+				func(c *gin.Context) {
+					calls++
+					c.String(http.StatusOK, c.Request.Host)
+				},
+			))
+
+			hosts := []string{
+				"a.example.com",
+				"b.example.com",
+				"a.example.com",
+			}
+
+			for _, host := range hosts {
+				req := httptest.NewRequest(
+					http.MethodGet,
+					"http://"+host+"/profile",
+					nil,
+				)
+
+				w := httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+
+				assert.Equal(t, http.StatusOK, w.Code)
+				assert.Equal(t, host, w.Body.String())
+			}
+
+			assert.Equal(t, 2, calls)
+		})
+	}
+}
+
+func TestSiteCacheSeparatesHosts(t *testing.T) {
+	store := persistence.NewInMemoryStore(time.Minute)
+
+	seedRouter := gin.New()
+	seedRouter.GET("/profile", CachePage(
+		store,
+		time.Minute,
+		func(c *gin.Context) {
+			c.String(http.StatusOK, "tenant="+c.Request.Host)
+		},
+	))
+
+	cacheRouter := gin.New()
+	cacheRouter.GET("/profile", SiteCache(store, time.Minute))
+
+	hosts := []string{
+		"a.example.com",
+		"b.example.com",
+	}
+
+	for _, host := range hosts {
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"http://"+host+"/profile",
+			nil,
+		)
+
+		w := httptest.NewRecorder()
+		seedRouter.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		require.Equal(t, "tenant="+host, w.Body.String())
+	}
+
+	for _, host := range hosts {
+		t.Run(host, func(t *testing.T) {
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"http://"+host+"/profile",
+				nil,
+			)
+
+			w := httptest.NewRecorder()
+			cacheRouter.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, "tenant="+host, w.Body.String())
+		})
+	}
+}
