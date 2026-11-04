@@ -215,6 +215,7 @@ func SiteCache(store persistence.CacheStore, expire time.Duration) gin.HandlerFu
 				}
 			}
 			_, _ = c.Writer.Write(cache.Data)
+			c.Abort()
 		}
 	}
 }

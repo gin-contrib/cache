@@ -335,3 +335,44 @@ func (c *memoryDelayStore) Add(key string, value any, expires time.Duration) err
 	time.Sleep(time.Millisecond * 3)
 	return c.InMemoryStore.Add(key, value, expires)
 }
+
+func TestSiteCacheStopsHandlersOnHit(t *testing.T) {
+	store := persistence.NewInMemoryStore(time.Minute)
+
+	router := gin.New()
+	router.Use(SiteCache(store, time.Minute))
+
+	middlewareCalls := 0
+	handlerCalls := 0
+
+	router.Use(func(c *gin.Context) {
+		middlewareCalls++
+		c.Next()
+	})
+
+	router.GET("/cached", CachePage(
+		store,
+		time.Minute,
+		func(c *gin.Context) {
+			handlerCalls++
+			c.String(http.StatusOK, "cached response")
+		},
+	))
+
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"/cached",
+			nil,
+		)
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		require.Equal(t, "cached response", w.Body.String())
+	}
+
+	assert.Equal(t, 1, middlewareCalls)
+	assert.Equal(t, 1, handlerCalls)
+}
